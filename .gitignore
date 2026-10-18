@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+node_modules/
+.cache/
+test-results/
+playwright-report/
+artifacts/
+*.user
+/BRD.md
+/План розробки.md
+/.agents/
+/.codex/
+/.aws/
+.env
+.env.*
+!.env.example

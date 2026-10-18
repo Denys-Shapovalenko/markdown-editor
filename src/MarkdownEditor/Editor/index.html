@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Markdown Редактор</title>
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="brand-icon">M<span>↓</span></span><div><strong>Markdown Редактор</strong><small>Документ у фокусі</small></div></div>
+    <div class="file-actions" role="group" aria-label="Файл">
+      <button data-file="new" title="Новий документ (Ctrl+N)">Новий</button>
+      <button data-file="open" title="Відкрити (Ctrl+O)">Відкрити</button>
+      <button data-file="saveAs" title="Зберегти як (Ctrl+Shift+S)">Зберегти як…</button>
+      <button class="primary" data-file="save" title="Зберегти (Ctrl+S)">Зберегти <span>↗</span></button>
+    </div>
+  </header>
+  <nav class="toolbar" aria-label="Форматування">
+    <label class="style-control"><span class="sr-only">Стиль абзацу</span><select id="block-style" aria-label="Стиль абзацу"><option value="p">Звичайний текст</option><option value="h1">Заголовок 1</option><option value="h2">Заголовок 2</option><option value="h3">Заголовок 3</option><option value="h4">Заголовок 4</option><option value="h5">Заголовок 5</option><option value="h6">Заголовок 6</option></select></label>
+    <span class="separator"></span>
+    <button data-command="bold" title="Жирний (Ctrl+B)" aria-label="Жирний" aria-pressed="false"><b>B</b></button>
+    <button data-command="italic" title="Курсив (Ctrl+I)" aria-label="Курсив" aria-pressed="false"><i>I</i></button>
+    <button data-command="strikeThrough" title="Закреслений (Ctrl+Shift+X)" aria-label="Закреслений" aria-pressed="false"><s>S</s></button>
+    <span class="separator"></span>
+    <button data-command="insertUnorderedList" title="Маркований список" aria-label="Маркований список" aria-pressed="false">• ≡</button>
+    <button data-command="insertOrderedList" title="Нумерований список" aria-label="Нумерований список" aria-pressed="false">1. ≡</button>
+    <span class="separator"></span>
+    <button id="insert-table" title="Створити таблицю">▦ <span>Таблиця</span></button>
+    <span class="toolbar-hint">Markdown · GFM</span>
+  </nav>
+  <div id="table-tools" class="table-tools" role="group" aria-label="Редагування таблиці">
+    <span>Таблиця</span><button data-table="rowAdd" disabled>+ Рядок</button><button data-table="rowDelete" disabled>− Рядок</button><button data-table="columnAddLeft" title="Додати стовпець ліворуч" disabled>+ Стовпець ←</button><button data-table="columnAdd" title="Додати стовпець праворуч" disabled>+ Стовпець</button><button data-table="columnDelete" disabled>− Стовпець</button><button data-table="delete" disabled>Видалити таблицю</button><small id="table-hint">Оберіть клітинку таблиці</small>
+  </div>
+  <div id="notice" role="status" hidden></div>
+  <main>
+    <div class="document-meta"><span id="file-name">Без назви</span><span id="document-state">Усі зміни збережено</span></div>
+    <article id="editor" contenteditable="true" role="textbox" aria-label="Документ" aria-multiline="true" spellcheck="false"><p><br></p></article>
+    <div class="page-end" aria-hidden="true">✧</div>
+  </main>
+  <footer><span><span class="status-dot"></span> <span id="footer-status">Готово до роботи</span></span><span id="word-count">0 слів</span><span>UTF-8 <span class="footer-divider">/</span> Markdown</span></footer>
+  <dialog id="table-dialog">
+    <form id="table-form">
+      <h2>Нова таблиця</h2><p>Перший рядок буде заголовком.</p>
+      <label>Рядків разом із заголовком <input id="table-rows" type="number" min="1" max="100" value="3" required></label>
+      <label>Стовпців <input id="table-columns" type="number" min="1" max="20" value="3" required></label>
+      <div class="dialog-actions"><button type="button" id="cancel-table">Скасувати</button><button class="primary" type="submit">Створити</button></div>
+    </form>
+  </dialog>
+  <div id="context-menu" role="menu" aria-label="Команди редактора" hidden>
+    <button role="menuitem" data-command="bold" aria-label="Жирний" aria-keyshortcuts="Control+B">Жирний<kbd>Ctrl+B</kbd></button>
+    <button role="menuitem" data-command="italic" aria-label="Курсив" aria-keyshortcuts="Control+I">Курсив<kbd>Ctrl+I</kbd></button>
+    <button role="menuitem" data-command="strikeThrough" aria-label="Закреслений" aria-keyshortcuts="Control+Shift+X">Закреслений<kbd>Ctrl+Shift+X</kbd></button>
+    <div class="menu-divider" role="separator"></div>
+    <button role="menuitem" data-command="insertUnorderedList">Маркований список</button>
+    <button role="menuitem" data-command="insertOrderedList">Нумерований список</button>
+    <div id="context-table" hidden>
+      <div class="menu-divider" role="separator"></div>
+      <button role="menuitem" data-table="rowAdd">Додати рядок нижче</button>
+      <button role="menuitem" data-table="rowDelete">Видалити рядок</button>
+      <button role="menuitem" data-table="columnAddLeft">Додати стовпець ліворуч</button>
+      <button role="menuitem" data-table="columnAdd">Додати стовпець праворуч</button>
+      <button role="menuitem" data-table="columnDelete">Видалити стовпець</button>
+      <button role="menuitem" data-table="delete">Видалити таблицю</button>
+    </div>
+  </div>
+  <script type="module" src="editor.js"></script>
+</body>
+</html>
