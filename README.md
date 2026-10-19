@@ -6,12 +6,12 @@ A visual editor for local Markdown (`.md`) files. The application combines a Win
 
 ## Download and run
 
-Build the compact, single-file application with `./build.ps1`, then launch `artifacts\win-x64-compact\MarkdownEditor.exe`. The executable bundles the editor UI and its JavaScript dependencies. It requires the **.NET 10 Desktop Runtime (x64)** and **Microsoft Edge WebView2 Evergreen Runtime** to be installed. Editing works offline.
+Build the compact single-executable application with `./build.ps1`, then launch `artifacts\win-x64-framework48-single\MarkdownEditor.exe`. It targets **.NET Framework 4.8**, included in Windows 10 version 1903 and later, and uses the **Microsoft Edge WebView2 Evergreen Runtime**. Editing works offline.
 
-- [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48) (install only on Windows versions that do not include it)
 - [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)
 
-The default build is a compact framework-dependent EXE. Use `./build.ps1 -SelfContained` to produce a larger single-file EXE that also bundles .NET; WebView2 is still required. The self-contained build needs NuGet access on the first build.
+The EXE contains the application and its dependencies in a compressed bundle; on first launch it extracts the app files to `%LocalAppData%\MarkdownEditor\Packages`. No separate .NET Runtime installation is needed on Windows 10 version 1903 and later. If WebView2 is missing, install its Evergreen Runtime.
 
 ## Features
 
@@ -27,7 +27,7 @@ The editor has a 5 MiB document size limit. External images are downloaded only 
 
 ## Build and test
 
-Requirements: Windows x64, .NET 10 SDK, WebView2 Runtime, and Node.js 24 or later for browser tests and updating the vendored Markdown lexer.
+Requirements: Windows x64, .NET 10 SDK, .NET Framework 4.8 targeting references (restored from NuGet), WebView2 Runtime, and Node.js 24 or later for browser tests and updating the vendored Markdown lexer.
 
 ```powershell
 dotnet run --project src/MarkdownEditor/MarkdownEditor.csproj
@@ -40,10 +40,10 @@ npm.cmd test
 dotnet run --project tests/FileTests/FileTests.csproj
 ```
 
-Browser tests use Microsoft Edge in headless mode. To smoke-test the real WinForms/WebView2 application from a clean folder:
+Browser tests use Microsoft Edge in headless mode. To smoke-test the real WinForms/WebView2 application from an isolated deployment folder:
 
 ```powershell
-./scripts/test-singlefile.ps1
+./scripts/test-deployment.ps1
 ```
 
 ## Project structure

@@ -23,6 +23,7 @@ internal sealed class MainForm : Form
     public MainForm(string[] args)
     {
         arguments = args;
+        Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? System.Drawing.SystemIcons.Application;
         var testMode = args.Length == 2 && args[0] is "--smoke-test" or "--test-session" or "--test-recover";
         var dataRoot = testMode ? Path.GetFullPath(args[1]) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MarkdownEditor");
         recovery = new RecoveryStore(Path.Combine(dataRoot, "Recovery"));
@@ -95,8 +96,8 @@ internal sealed class MainForm : Form
             using var document = JsonDocument.Parse(e.WebMessageAsJson);
             var message = document.RootElement;
             var type = message.GetProperty("type").GetString();
-            if (message.TryGetProperty("requestId", out var id) && pending.Remove(id.GetString()!, out var completion))
-            { completion.SetResult(message.Clone()); return; }
+            if (message.TryGetProperty("requestId", out var id) && pending.TryGetValue(id.GetString()!, out var completion))
+            { pending.Remove(id.GetString()!); completion.SetResult(message.Clone()); return; }
             if (type == "ready")
             {
                 ready = true; startupTimer.Stop();
@@ -159,7 +160,7 @@ internal sealed class MainForm : Form
         Send(new { type, requestId = id, payload });
         try
         {
-            var response = await completion.Task.WaitAsync(TimeSpan.FromSeconds(20));
+            var response = await Compatibility.WithTimeout(completion.Task, TimeSpan.FromSeconds(20));
             if (response.TryGetProperty("error", out var error)) throw new IOException(error.GetString());
             return response;
         }
@@ -175,7 +176,7 @@ internal sealed class MainForm : Form
             {
                 var text = Clipboard.ContainsText() ? Clipboard.GetText() : "";
                 var html = Clipboard.ContainsText(TextDataFormat.Html) ? Clipboard.GetText(TextDataFormat.Html) : "";
-                Clipboard.TryGetData<string>("text/markdown", out var markdown);
+                var markdown = Clipboard.GetData("text/markdown") as string;
                 markdown ??= "";
                 await RequestAsync("clipboard", new { text, html, markdown, mode = command == "pasteMarkdown" ? "markdown" : "auto" });
             }

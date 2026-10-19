@@ -14,7 +14,7 @@ internal static class DocumentFiles
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         if (stream.Length > MaxBytes) throw new IOException("Файл перевищує ліміт 5 MiB. Відкрийте менший документ.");
         var bytes = new byte[(int)stream.Length];
-        stream.ReadExactly(bytes);
+        Compatibility.ReadExactly(stream, bytes);
         return bytes;
     }
 
@@ -26,13 +26,13 @@ internal static class DocumentFiles
 
     private static string DecodeCore(byte[] bytes)
     {
-        if (bytes.AsSpan().StartsWith(new byte[] { 0xff, 0xfe, 0, 0 }) || bytes.AsSpan().StartsWith(new byte[] { 0, 0, 0xfe, 0xff }))
+        if (Compatibility.StartsWith(bytes, 0xff, 0xfe, 0, 0) || Compatibility.StartsWith(bytes, 0, 0, 0xfe, 0xff))
             throw new IOException("UTF-32 не підтримується. Перезбережіть файл у UTF-8.");
-        if (bytes.AsSpan().StartsWith(new byte[] { 0xff, 0xfe })) return new UnicodeEncoding(false, true, true).GetString(bytes, 2, bytes.Length - 2);
-        if (bytes.AsSpan().StartsWith(new byte[] { 0xfe, 0xff })) return new UnicodeEncoding(true, true, true).GetString(bytes, 2, bytes.Length - 2);
-        var offset = bytes.AsSpan().StartsWith(new byte[] { 0xef, 0xbb, 0xbf }) ? 3 : 0;
+        if (Compatibility.StartsWith(bytes, 0xff, 0xfe)) return new UnicodeEncoding(false, true, true).GetString(bytes, 2, bytes.Length - 2);
+        if (Compatibility.StartsWith(bytes, 0xfe, 0xff)) return new UnicodeEncoding(true, true, true).GetString(bytes, 2, bytes.Length - 2);
+        var offset = Compatibility.StartsWith(bytes, 0xef, 0xbb, 0xbf) ? 3 : 0;
         var text = Utf8.GetString(bytes, offset, bytes.Length - offset);
-        if (text.Contains('\0')) throw new IOException("Файл містить нульові символи. Переконайтеся, що це Markdown у UTF-8.");
+        if (text.IndexOf('\0') >= 0) throw new IOException("Файл містить нульові символи. Переконайтеся, що це Markdown у UTF-8.");
         return text;
     }
 
@@ -43,7 +43,7 @@ internal static class DocumentFiles
         var fullPath = Path.GetFullPath(path);
         void CheckConflict()
         {
-            if (checkConflict && (!File.Exists(fullPath) || expectedBytes is null || !ReadBytes(fullPath).AsSpan().SequenceEqual(expectedBytes)))
+            if (checkConflict && (!File.Exists(fullPath) || expectedBytes is null || !Compatibility.BytesEqual(ReadBytes(fullPath), expectedBytes)))
                 throw new DocumentConflictException("Файл змінився або був видалений іншою програмою.");
         }
         CheckConflict();
@@ -52,7 +52,7 @@ internal static class DocumentFiles
         {
             using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
-                stream.Write(bytes);
+                stream.Write(bytes, 0, bytes.Length);
                 stream.Flush(true);
             }
             CheckConflict();

@@ -1,4 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
-  <ItemGroup><Compile Include="../../src/MarkdownEditor/DocumentFiles.cs" Link="DocumentFiles.cs"/><Compile Include="../../src/MarkdownEditor/RecoveryStore.cs" Link="RecoveryStore.cs"/><Compile Include="../../src/MarkdownEditor/DocumentImages.cs" Link="DocumentImages.cs"/></ItemGroup>
+  <ItemGroup><Compile Include="../../src/MarkdownEditor/Compatibility.cs" Link="Compatibility.cs"/><Compile Include="../../src/MarkdownEditor/DocumentFiles.cs" Link="DocumentFiles.cs"/><Compile Include="../../src/MarkdownEditor/RecoveryStore.cs" Link="RecoveryStore.cs"/><Compile Include="../../src/MarkdownEditor/DocumentImages.cs" Link="DocumentImages.cs"/></ItemGroup>
 </Project>
