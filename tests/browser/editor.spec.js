@@ -204,7 +204,7 @@ test('table creation, text, Tab, Enter, rows and columns', async ({ page }) => {
   await page.keyboard.type('Назва'); await page.keyboard.press('Tab'); await page.keyboard.type('Стан');
   await page.keyboard.press('Tab'); await page.keyboard.type('a|b'); await page.keyboard.press('Tab'); await page.keyboard.type('Готово');
   await page.keyboard.press('Tab'); await expect(page.locator('#editor tr')).toHaveCount(3);
-  await page.getByRole('button', { name: '+ Стовпець', exact: true }).click();
+  await page.getByRole('button', { name: '+ Стовпець праворуч', exact: true }).click();
   await expect(page.locator('#editor th')).toHaveCount(3);
   await page.getByRole('button', { name: '− Стовпець', exact: true }).click();
   await expect(page.locator('#editor th')).toHaveCount(2);

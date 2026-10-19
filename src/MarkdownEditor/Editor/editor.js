@@ -508,7 +508,7 @@ async function receive(message) {
     if (busy) closeContextMenu();
     document.body.classList.toggle('busy', busy);
     document.querySelectorAll('[data-file], [data-table]').forEach(button => button.disabled = busy);
-    updateToolbar(); return;
+    updateToolbar(); features?.update(); return;
   }
   const response = { type: 'response', requestId: message.requestId };
   try {
