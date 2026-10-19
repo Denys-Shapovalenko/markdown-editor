@@ -111,6 +111,7 @@ body.busy #editor { opacity: .65; }
 #outline button[data-level="2"] { padding-left: 8px; } #outline button[data-level="3"] { padding-left: 16px; }
 #outline button[data-level="4"], #outline button[data-level="5"], #outline button[data-level="6"] { padding-left: 24px; }
 body.outline-open main { margin-left: 205px; margin-right: 25px; }
+body.typewriter-mode main { padding-bottom: 50vh; }
 #editor img { max-width: 100%; height: auto; min-width: 20px; min-height: 20px; }
 #editor code { font-family: Consolas, monospace; background: #f0f3f0; border-radius: 3px; padding: 1px 3px; }
 #editor pre { white-space: pre-wrap; tab-size: 4; padding: 15px; border: 1px solid var(--border); border-radius: 5px; background: #f5f7f5; }

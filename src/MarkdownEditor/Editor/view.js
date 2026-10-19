@@ -18,7 +18,7 @@ export function installViewPreferences({ editor }) {
   const preferences = readPreferences();
   const root = document.documentElement;
   const buttons = Object.fromEntries([...document.querySelectorAll('[data-view]')].map(button => [button.dataset.view, button]));
-  let scrollPending = false;
+  let scrollFrame = 0;
 
   function save() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences)); } catch { /* Preferences are optional when storage is unavailable. */ }
@@ -48,18 +48,25 @@ export function installViewPreferences({ editor }) {
     updateActiveBlock();
   }
   function centerCaret() {
-    if (!preferences.typewriter || document.activeElement !== editor || scrollPending) return;
-    const block = updateActiveBlock();
-    if (!block) return;
-    const rect = block.getBoundingClientRect();
-    const viewport = window.innerHeight;
-    if (rect.top < 120 || rect.bottom > viewport - 72) {
-      scrollPending = true;
-      requestAnimationFrame(() => {
-        block.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        scrollPending = false;
-      });
-    }
+    if (!preferences.typewriter || document.activeElement !== editor || scrollFrame) return;
+    if (!updateActiveBlock()) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      if (!preferences.typewriter || document.activeElement !== editor) return;
+      const selection = window.getSelection();
+      if (!selection?.rangeCount || !editor.contains(selection.anchorNode)) return;
+      const range = selection.getRangeAt(0);
+      const caret = range.getBoundingClientRect();
+      const block = activeBlock();
+      if (!block) return;
+      const blockRect = block.getBoundingClientRect();
+      const caretY = caret.height || caret.top ? caret.top + caret.height / 2 : blockRect.top;
+      const toolbarBottom = document.querySelector('.toolbar')?.getBoundingClientRect().bottom ?? 0;
+      const footerTop = document.querySelector('footer')?.getBoundingClientRect().top ?? window.innerHeight;
+      const targetY = (toolbarBottom + footerTop) / 2;
+      const offset = caretY - targetY;
+      if (Math.abs(offset) > 1) window.scrollBy(0, offset);
+    });
   }
   function change(update) { update(); sync(); save(); }
 
