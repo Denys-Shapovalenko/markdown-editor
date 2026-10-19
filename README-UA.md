@@ -6,12 +6,12 @@
 
 ## Завантаження та запуск
 
-Зберіть компактний застосунок одним файлом командою `./build.ps1`, а потім запустіть `artifacts\win-x64-compact\MarkdownEditor.exe`. Виконуваний файл містить інтерфейс редактора та його JavaScript-залежності. Для запуску потрібні встановлені **.NET 10 Desktop Runtime (x64)** і **Microsoft Edge WebView2 Evergreen Runtime**. Редагувати документи можна без інтернету.
+Зберіть компактний застосунок одним EXE командою `./build.ps1`, а потім запустіть `artifacts\win-x64-framework48-single\MarkdownEditor.exe`. Він працює на **.NET Framework 4.8**, який входить до Windows 10 версії 1903 і новіших, і використовує **Microsoft Edge WebView2 Evergreen Runtime**. Редагувати документи можна без інтернету.
 
-- [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48) (встановлювати лише на версіях Windows, де його немає)
 - [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)
 
-Стандартна збірка створює компактний EXE, який використовує встановлений .NET. Команда `./build.ps1 -SelfContained` створює більший EXE, що також містить .NET; WebView2 усе одно має бути встановлений. Для першої автономної збірки потрібен доступ до NuGet.
+EXE містить застосунок і залежності в стисненому архіві; під час першого запуску файли розпаковуються в `%LocalAppData%\MarkdownEditor\Packages`. У Windows 10 версії 1903 і новіших окремо встановлювати .NET Runtime не потрібно. Якщо WebView2 відсутній, встановіть його Evergreen Runtime.
 
 ## Можливості
 
@@ -27,7 +27,7 @@
 
 ## Збірка та перевірки
 
-Потрібні Windows x64, .NET 10 SDK, WebView2 Runtime і Node.js 24 або новіший для браузерних тестів та оновлення вбудованого Markdown-лексера.
+Потрібні Windows x64, .NET 10 SDK, цільові файли .NET Framework 4.8 (відновлюються з NuGet), WebView2 Runtime і Node.js 24 або новіший для браузерних тестів та оновлення вбудованого Markdown-лексера.
 
 ```powershell
 dotnet run --project src/MarkdownEditor/MarkdownEditor.csproj
@@ -40,10 +40,10 @@ npm.cmd test
 dotnet run --project tests/FileTests/FileTests.csproj
 ```
 
-Браузерні тести працюють у Microsoft Edge в headless-режимі. Щоб перевірити WinForms/WebView2 у чистій папці:
+Браузерні тести працюють у Microsoft Edge в headless-режимі. Щоб перевірити WinForms/WebView2 в ізольованій папці розгортання:
 
 ```powershell
-./scripts/test-singlefile.ps1
+./scripts/test-deployment.ps1
 ```
 
 ## Структура проєкту

@@ -32,8 +32,8 @@ internal sealed class RecoveryStore
         try
         {
             var bytes = JsonSerializer.SerializeToUtf8Bytes(draft, JsonOptions);
-            using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None)) { stream.Write(bytes); stream.Flush(true); }
-            File.Move(temporary, target, true);
+            using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None)) { stream.Write(bytes, 0, bytes.Length); stream.Flush(true); }
+            Compatibility.ReplaceFile(temporary, target);
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }

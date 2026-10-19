@@ -13,7 +13,7 @@ internal sealed class EditorAssets
     {
         resources = assembly.GetManifestResourceNames()
             .Where(name => name.StartsWith("Editor/", StringComparison.Ordinal))
-            .ToDictionary(name => name[7..].Replace('\\', '/'), name => name, StringComparer.Ordinal);
+            .ToDictionary(name => name.Substring(7).Replace('\\', '/'), name => name, StringComparer.Ordinal);
         foreach (var required in new[] { "index.html", "editor.css", "editor.js", "markdown.js", "icons.js", "vendor/marked.js", "vendor/marked.LICENSE" })
             if (!resources.ContainsKey(required)) throw new IOException($"У збірці відсутній ресурс редактора: {required}");
     }
