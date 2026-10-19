@@ -14,3 +14,5 @@ artifacts/
 .env
 .env.*
 !.env.example
+
+/docs/

@@ -1,43 +1,38 @@
-# Markdown Редактор для Windows
+# Markdown Editor for Windows
 
-Візуальний редактор локальних `.md`: WinForms + WebView2, власний HTML/CSS/JavaScript-редактор. Версія 2 охоплює редагування, відновлення чернеток і захист від втрати змін.
+A visual editor for local Markdown (`.md`) files. The application combines a Windows Forms shell with an embedded HTML/CSS/JavaScript editor hosted in WebView2. Version 2 focuses on reliable editing, draft recovery, and protection against losing changes.
 
-## Запуск
+[Українська версія](README-UA.md)
 
-Спочатку зберіть застосунок командою `./build.ps1` (вимоги наведені нижче), потім відкрийте `artifacts\win-x64-compact\MarkdownEditor.exe`. Це **один EXE**, **1 573 634 байти (1,50 МіБ)** у Release-збірці версії 2 від 19.10.2026. Для запуску потрібні встановлені **.NET 10 Desktop Runtime x64** та **Microsoft Edge WebView2 Evergreen Runtime**. Застосунок не потребує мережі для редагування. Згенеровані збірки й кеші не входять до репозиторію.
+## Download and run
 
-Передавайте лише `MarkdownEditor.exe`: HTML, CSS, JavaScript і бібліотеки редактора вбудовані. Один файл для передавання не означає відсутність системних залежностей: .NET і браузерний рушій використовуються зі встановлених Runtime. WebView2 зберігає профіль у `%LOCALAPPDATA%\MarkdownEditor\WebView2`; завантажувач нативної бібліотеки може розпаковуватися в тимчасову папку .NET.
+Build the compact, single-file application with `./build.ps1`, then launch `artifacts\win-x64-compact\MarkdownEditor.exe`. The executable bundles the editor UI and its JavaScript dependencies. It requires the **.NET 10 Desktop Runtime (x64)** and **Microsoft Edge WebView2 Evergreen Runtime** to be installed. Editing works offline.
 
-Завантаження залежностей: [.NET 10 — Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0), [WebView2 Evergreen Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). У разі відсутності WebView2 програма покаже повідомлення з адресою встановлення.
+- [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)
 
-## Використання
+The default build is a compact framework-dependent EXE. Use `./build.ps1 -SelfContained` to produce a larger single-file EXE that also bundles .NET; WebView2 is still required. The self-contained build needs NuGet access on the first build.
 
-1. Відкрийте меню **Файл → Відкрити** або натисніть Ctrl+O та виберіть Markdown-файл. Часті команди є на компактному тулбарі під головним меню.
-2. Вводьте текст на полотні. Виділіть текст для жирного, курсиву або закреслення; стиль абзацу змінюйте у списку зліва.
-3. Створюйте списки кнопками панелі. Enter додає пункт; Enter у порожньому пункті завершує список. Повторне натискання кнопки вимикає список лише для поточного пункту або вибраних пунктів. Послідовно позначені сусідні абзаци з’єднуються в один список із продовженням нумерації.
-4. Кнопка **Таблиця** відкриває налаштування розміру. Натисніть клітинку: під панеллю форматування стануть активними **+ Рядок**, **− Рядок**, **+ Стовпець ←** (ліворуч), **+ Стовпець** (праворуч), **− Стовпець**. Рядок додається нижче вибраного. Ці самі команди доступні правою кнопкою миші у клітинці. Панель залишається зверху під час прокручування. Tab і Shift+Tab переміщають між клітинками; Tab наприкінці додає рядок. Після видалення верхнього рядка наступний стає заголовком; видалення єдиного рядка прибирає таблицю. Останній стовпець не видаляється; всю таблицю можна видалити окремою командою.
-5. Натисніть **Зберегти** / Ctrl+S або **Зберегти як…** / Ctrl+Shift+S. Перед закриттям, створенням нового документа чи відкриттям іншого файла програма запропонує зберегти зміни.
+## Features
 
-Головне меню має звичні розділи **Файл**, **Правка**, **Вигляд**, **Вставка**, **Формат**, **Таблиця** та **Довідка**. Рідкісні команди згруповано там, щоб тулбар займав один рядок. У меню, тулбарі й контекстних командах використані узгоджені SVG-іконки для поширених дій. Правою кнопкою миші або Shift+F10 відкривається контекстне меню форматування та списків. У таблиці воно також містить команди рядків і стовпців. Escape закриває меню; стрілки переміщають між командами контекстного меню.
+- Open, edit, and save local Markdown files, with prompts before discarding unsaved changes.
+- Format text and paragraphs; create nested ordered and unordered lists, checklists, code blocks, quotes, links, and images.
+- Edit tables with the toolbar or context menu: add and remove rows and columns, move and select cells, and navigate with the keyboard.
+- Undo and redo while preserving the cursor; search and replace; edit Markdown source; view a document outline.
+- Recover drafts after a crash and handle files changed by another application.
+- Print or export to PDF and standalone HTML.
+- Keep unsupported Markdown blocks intact while editing the rest of a document.
 
-Захищені сірі блоки містять розмітку, яку програма не редагує візуально, але зберігає дослівно. Наведіть курсор, щоб побачити вихідний текст. За потреби змініть джерело такого блока через **Вигляд → Джерело вибраного блока**.
+The editor has a 5 MiB document size limit. External images are downloaded only when the user invokes the dedicated command.
 
-У версії 2 додані Undo/Redo з курсором, копіювання та вставлення звичайного тексту/Markdown/таблиць, пошук і заміна, вкладені списки й чеклісти, код і цитати, посилання та зображення, редагування вихідного Markdown, зміст документа, виділення та переміщення рядків/стовпців таблиці, друк, PDF та автономний HTML. Зовнішні зображення завантажуються лише за окремою командою. Чернетки відновлюються після збою; при зовнішній зміні файла можна порівняти версії, перечитати файл або зберегти правки в копію. Максимальний розмір документа — 5 MiB.
+## Build and test
 
-Повний обсяг версії: [E01–E15 та перевірки](docs/Validation.md), [правила підтримуваного Markdown](docs/Markdown-MVP.md).
-
-## Розробка та збірка
-
-Потрібні Windows x64, .NET SDK 10 та WebView2 Runtime. Node.js 24+ потрібен для тестів і оновлення локальної копії Markdown-лексера; звичайна збірка C# вже містить його у `Editor/vendor`.
+Requirements: Windows x64, .NET 10 SDK, WebView2 Runtime, and Node.js 24 or later for browser tests and updating the vendored Markdown lexer.
 
 ```powershell
 dotnet run --project src/MarkdownEditor/MarkdownEditor.csproj
 ./build.ps1
-```
 
-За замовчуванням створюється компактний EXE без .NET Runtime усередині. `-FrameworkDependent` залишено як синонім цього режиму. `./build.ps1 -SelfContained` створює один більший EXE з .NET у `artifacts\win-x64-singlefile-selfcontained` (приблизно 111,88 МіБ); WebView2 Runtime все одно потрібен. Для першої збірки потрібен доступ до NuGet. Скрипт перевіряє, що результат публікації містить рівно один EXE.
-
-```powershell
 npm.cmd ci --ignore-scripts
 npm.cmd run vendor
 npm.cmd run test:unit
@@ -45,27 +40,20 @@ npm.cmd test
 dotnet run --project tests/FileTests/FileTests.csproj
 ```
 
-Браузерні тести використовують установлений Microsoft Edge у headless-режимі. Для інтеграційної перевірки реального WinForms/WebView2:
+Browser tests use Microsoft Edge in headless mode. To smoke-test the real WinForms/WebView2 application from a clean folder:
 
 ```powershell
 ./scripts/test-singlefile.ps1
 ```
 
-Скрипт копіює лише EXE в нову чисту папку та запускає вбудований `--smoke-test`. Цей режим створює тестові Markdown-файли й профіль WebView2 у підпапці `results` та закриває застосунок після перевірки. Діалоги підміняються контрольованими відповідями лише у цьому режимі. Іншу збірку можна перевірити параметром `-Exe`.
+## Project structure
 
-## Структура
+- `src/MarkdownEditor/` — Windows application and embedded editor.
+- `tests/` — browser, file, and regression tests.
+- `scripts/` — build and integration-test helpers.
 
-- `src/MarkdownEditor/MainForm.cs` — Windows-оболонка та протокол повідомлень.
-- `src/MarkdownEditor/EditorAssets.cs` — завантаження вбудованих ресурсів через WebView2 без зовнішньої папки `Editor`.
-- `src/MarkdownEditor/DocumentFiles.cs` — кодування, перевірка зовнішніх змін та атомарний запис.
-- `src/MarkdownEditor/DocumentDialogs.cs` — системні діалоги та їх тестова підміна.
-- `src/MarkdownEditor/RecoveryStore.cs`, `VersionDialogs.cs`, `DocumentImages.cs` — чернетки відновлення, конфлікти файла та вкладені зображення.
-- `src/MarkdownEditor/Editor/markdown.js` — імпорт, експорт та збереження вихідних фрагментів.
-- `src/MarkdownEditor/Editor/editor.js`, `features.js`, `history.js`, `clipboard.js`, `table-features.js` — редагування, історія, буфер обміну та додаткові команди.
-- `tests` — контрольні файли, браузерні й файлові перевірки.
+The editor uses [Marked](https://marked.js.org/) to parse Markdown; it does not embed a separate WYSIWYG editor. WebView2 is provided by Microsoft. See the [WebView2 local content documentation](https://learn.microsoft.com/microsoft-edge/webview2/concepts/working-with-local-content).
 
-Marked використовується лише для розбору Markdown. Готового WYSIWYG-рушія немає. Його MIT-ліцензія знаходиться у `Editor/vendor/marked.LICENSE`. WebView2 — офіційний пакет Microsoft. Опис використаних API: [локальні ресурси WebView2](https://learn.microsoft.com/microsoft-edge/webview2/concepts/working-with-local-content), [Marked Lexer](https://marked.js.org/using_pro).
+## Contributions and access
 
-Стан перевірок і ручне приймання: [docs/Validation.md](docs/Validation.md).
-
-Дослідження розвитку: [конкуренти й можливості Markdown](docs/Competitor-analysis.md), [список функцій](docs/Editor-feature-backlog.md), [можливості для відмінності продукту](docs/Product-opportunities.md).
+This repository is public for viewing and cloning. Write access is limited to the owner and collaborators explicitly invited by the owner. Public users may suggest changes through pull requests, but that does not grant permission to write to the repository or merge changes.
