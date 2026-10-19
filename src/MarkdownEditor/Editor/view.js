@@ -38,6 +38,7 @@ export function installViewPreferences({ editor }) {
   function sync() {
     root.dataset.theme = preferences.theme;
     root.style.setProperty('--editor-font-size', `${preferences.fontSize}px`);
+    root.style.setProperty('--page-scale', String(preferences.fontSize / 16));
     document.body.classList.toggle('focus-mode', preferences.focus);
     document.body.classList.toggle('typewriter-mode', preferences.typewriter);
     const themeLabel = preferences.theme === 'dark' ? 'Світла тема' : 'Темна тема';
