@@ -21,10 +21,27 @@ async function clickMenu(page, selector) {
 test('view preferences change presentation only and persist across reloads', async ({ page }) => {
   const source = '# Заголовок\n\nТекст документа.\n';
   await load(page, source);
+  const initialPageWidth = await page.locator('main').evaluate(node => node.getBoundingClientRect().width);
   await clickMenu(page, '[data-view="theme"]');
   await clickMenu(page, '[data-view="fontUp"]');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('#editor')).toHaveCSS('font-size', '18px');
+  const enlargedPage = await page.evaluate(() => ({
+    width: document.querySelector('main').getBoundingClientRect().width,
+    height: document.querySelector('#editor').getBoundingClientRect().height
+  }));
+  expect(enlargedPage.width).toBeGreaterThan(initialPageWidth);
+  expect(enlargedPage.height).toBeGreaterThan(550);
+  for (let i = 0; i < 3; i++) await clickMenu(page, '[data-view="fontUp"]');
+  const screenCappedPage = await page.evaluate(() => ({
+    width: document.querySelector('main').getBoundingClientRect().width,
+    height: document.querySelector('#editor').getBoundingClientRect().height,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight
+  }));
+  expect(screenCappedPage.width).toBeLessThanOrEqual(screenCappedPage.viewportWidth - 48 + 1);
+  expect(screenCappedPage.height).toBeLessThanOrEqual(screenCappedPage.viewportHeight - 230 + 1);
+  for (let i = 0; i < 3; i++) await clickMenu(page, '[data-view="fontDown"]');
   expect(await out(page)).toBe(source);
   expect(await page.evaluate(() => window.markdownEditor.dirty)).toBe(false);
 
