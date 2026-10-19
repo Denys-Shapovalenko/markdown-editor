@@ -8,7 +8,7 @@ using System.Windows.Forms;
 internal static class Program
 {
     private const string AppName = "MarkdownEditor.exe";
-    private static readonly string[] TestModes = { "--smoke-test", "--test-session", "--test-recover" };
+    private static readonly string[] TestModes = { "--smoke-test", "--test-session", "--test-recover", "--test-crash-session" };
 
     [STAThread]
     private static int Main(string[] args)
@@ -26,6 +26,19 @@ internal static class Program
                 UseShellExecute = false
             };
             using var app = Process.Start(start) ?? throw new IOException("Не вдалося запустити Markdown Редактор.");
+            if (args.Length == 2 && args[0] == "--test-crash-session")
+            {
+                var ready = Path.Combine(Path.GetFullPath(args[1]), "crash-session-ready.json");
+                var deadline = DateTime.UtcNow.AddSeconds(60);
+                while (!File.Exists(ready) && DateTime.UtcNow < deadline)
+                {
+                    if (app.HasExited) return app.ExitCode == 0 ? 1 : app.ExitCode;
+                    Thread.Sleep(100);
+                }
+                if (!File.Exists(ready)) { try { app.Kill(); } catch (InvalidOperationException) { } return 1; }
+                app.WaitForExit();
+                return app.ExitCode;
+            }
             if (args.Length > 0 && TestModes.Contains(args[0], StringComparer.Ordinal))
             {
                 if (!app.WaitForExit(60000))

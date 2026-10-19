@@ -24,7 +24,7 @@ internal sealed class MainForm : Form
     {
         arguments = args;
         Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? System.Drawing.SystemIcons.Application;
-        var testMode = args.Length == 2 && args[0] is "--smoke-test" or "--test-session" or "--test-recover";
+        var testMode = args.Length == 2 && args[0] is "--smoke-test" or "--test-session" or "--test-recover" or "--test-crash-session";
         var dataRoot = testMode ? Path.GetFullPath(args[1]) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MarkdownEditor");
         recovery = new RecoveryStore(Path.Combine(dataRoot, "Recovery"));
         dialogs = testMode ? new SmokeDocumentDialogs() : new WindowsDocumentDialogs();
@@ -44,7 +44,7 @@ internal sealed class MainForm : Form
         {
             var profile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MarkdownEditor", "WebView2");
             // Smoke tests keep their runtime data in the requested test folder.
-            if (arguments.Length == 2 && arguments[0] is "--smoke-test" or "--test-session" or "--test-recover") profile = Path.Combine(Path.GetFullPath(arguments[1]), "profile");
+            if (arguments.Length == 2 && arguments[0] is "--smoke-test" or "--test-session" or "--test-recover" or "--test-crash-session") profile = Path.Combine(Path.GetFullPath(arguments[1]), "profile");
             var environment = await CoreWebView2Environment.CreateAsync(null, profile);
             await web.EnsureCoreWebView2Async(environment);
             var core = web.CoreWebView2;
@@ -111,6 +111,7 @@ internal sealed class MainForm : Form
                         if (!File.Exists(original)) File.WriteAllText(original, "# Baseline\n\nOriginal file\n");
                         var bytes = DocumentFiles.ReadBytes(original); await LoadAsync(DocumentFiles.Decode(bytes), original, bytes); recoveryTimer.Start();
                     }
+                    else if (arguments.Length == 2 && arguments[0] == "--test-crash-session") await StartCrashRecoverySessionAsync(arguments[1]);
                     else if (arguments.Length == 2 && arguments[0] == "--test-recover") await RecoverySmokeAsync(arguments[1]);
                     else
                     {
@@ -368,6 +369,27 @@ internal sealed class MainForm : Form
         }
         catch (Exception ex) { Environment.ExitCode = 1; File.WriteAllText(Path.Combine(directory, "recovery-result.json"), JsonSerializer.Serialize(new { success = false, error = ex.ToString() })); }
         finally { allowClose = true; Close(); }
+    }
+
+    private async Task StartCrashRecoverySessionAsync(string directory)
+    {
+        Directory.CreateDirectory(directory);
+        var root = Path.GetFullPath(directory);
+        var original = Path.Combine(root, "Original.md");
+        const string baseline = "# Crash recovery test\n\nSaved original\n";
+        if (!File.Exists(original)) File.WriteAllText(original, baseline);
+        var bytes = DocumentFiles.ReadBytes(original);
+        await LoadAsync(DocumentFiles.Decode(bytes), original, bytes);
+        await web.ExecuteScriptAsync("document.querySelector('#editor').append(Object.assign(document.createElement('p'), {textContent: 'Unsaved edit'})); document.querySelector('#editor').dispatchEvent(new Event('input', {bubbles:true}));");
+        var state = await RequestAsync("state");
+        if (!state.GetProperty("dirty").GetBoolean()) throw new IOException("Test edit did not make the document dirty.");
+        dirty = true;
+        await WriteRecoveryAsync();
+        if (!Directory.Exists(Path.Combine(root, "Recovery")) || !Directory.EnumerateFiles(Path.Combine(root, "Recovery"), "*.json").Any()) throw new IOException("Recovery draft was not written before the crash.");
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        var signal = new { pid = process.Id, startTicks = process.StartTime.ToUniversalTime().Ticks };
+        File.WriteAllText(Path.Combine(root, "crash-session-ready.json"), JsonSerializer.Serialize(signal));
+        recoveryTimer.Start();
     }
 
     private async Task<bool> ConfirmDiscardAsync()
