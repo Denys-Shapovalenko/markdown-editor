@@ -50,6 +50,30 @@ test('focus and typewriter modes follow the active paragraph without changing Ma
   expect(await page.evaluate(() => window.markdownEditor.dirty)).toBe(false);
 });
 
+test('typewriter keeps the caret visible and centered inside a long paragraph', async ({ page }) => {
+  const source = `${'A long paragraph keeps going without a break. '.repeat(500)}\n`;
+  await load(page, source);
+  if (!await page.locator('body').evaluate(node => node.classList.contains('typewriter-mode')))
+    await clickMenu(page, '[data-view="typewriter"]');
+  await page.locator('#editor p').evaluate(node => {
+    const text = node.firstChild;
+    const range = document.createRange();
+    range.setStart(text, Math.floor(text.length * .9)); range.collapse(true);
+    const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    document.querySelector('#editor').focus(); document.dispatchEvent(new Event('selectionchange'));
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const range = window.getSelection().getRangeAt(0);
+    const caret = range.getBoundingClientRect();
+    const toolbarBottom = document.querySelector('.toolbar').getBoundingClientRect().bottom;
+    const footerTop = document.querySelector('footer').getBoundingClientRect().top;
+    const target = (toolbarBottom + footerTop) / 2;
+    return Math.abs(caret.top + caret.height / 2 - target);
+  })).toBeLessThan(3);
+  expect(await out(page)).toBe(source);
+  expect(await page.evaluate(() => window.markdownEditor.dirty)).toBe(false);
+});
+
 test('typing groups undo and redo, restores caret, and respects saved baseline', async ({ page }) => {
   await load(page, 'Start\n'); await caret(page, '#editor p', 5); await page.keyboard.type(' abc');
   await page.keyboard.press('Control+z'); expect(await out(page)).toBe('Start\n');
