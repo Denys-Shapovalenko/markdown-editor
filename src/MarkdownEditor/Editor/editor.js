@@ -13,7 +13,6 @@ const contextMenu = document.querySelector('#context-menu');
 addMenuIcons(contextMenu);
 addMenuIcons(document.querySelector('#menu-bar'));
 addToolbarIcons(document.querySelector('.toolbar'));
-addToolbarIcons(document.querySelector('#table-tools'));
 const appMenus = [...document.querySelectorAll('#menu-bar details')].sort((a, b) => Number(getComputedStyle(a).order) - Number(getComputedStyle(b).order));
 for (const menu of appMenus) menu.addEventListener('toggle', () => {
   if (menu.open) for (const other of appMenus) if (other !== menu) other.open = false;
@@ -529,6 +528,8 @@ async function receive(message) {
 window.chrome?.webview?.addEventListener('message', event => receive(event.data));
 // The same editor can be embedded in another shell without WinForms dependencies.
 features = installFeatures({ editor, model, history, post, changed, showNotice, selectionRange, elementAtCursor, protectedSelection, focusAt, rememberSelection, restoreSelection, currentCell, command, get busy() { return busy; } });
+addToolbarIcons(document.querySelector('#table-tools'));
+for (const button of document.querySelectorAll('#table-tools button')) button.addEventListener('pointerdown', event => event.preventDefault());
 installViewPreferences({ editor });
 window.markdownEditor = Object.freeze({ load, export: () => features.getSource(), get dirty() { return features.dirty; }, receive, features });
 changed(); post({ type: 'ready' });

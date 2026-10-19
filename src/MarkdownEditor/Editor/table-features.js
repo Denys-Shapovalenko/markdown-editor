@@ -2,9 +2,14 @@ export function installTableFeatures(ctx, mutate) {
   const { editor, focusAt, currentCell, showNotice } = ctx;
   let anchor = null; let selected = new Set();
   const tools = document.querySelector('#table-tools');
-  const labels = { selectRow: 'Виділити рядок', selectColumn: 'Виділити стовпець', rowUp: 'Рядки ↑', rowDown: 'Рядки ↓', columnLeft: 'Стовпці ←', columnRight: 'Стовпці →', alignLeft: 'Ліворуч', alignCenter: 'По центру', alignRight: 'Праворуч' };
-  for (const [action, label] of Object.entries(labels)) {
-    const button = document.createElement('button'); button.dataset.tableV2 = action; button.textContent = label; button.disabled = true;
+  const labels = {
+    selectRow: ['Виділити рядок', 'Виділити весь поточний рядок'], selectColumn: ['Виділити стовпець', 'Виділити весь поточний стовпець'],
+    rowUp: ['Рядки ↑', 'Перемістити вибрані рядки вгору'], rowDown: ['Рядки ↓', 'Перемістити вибрані рядки вниз'],
+    columnLeft: ['Стовпці ←', 'Перемістити вибрані стовпці ліворуч'], columnRight: ['Стовпці →', 'Перемістити вибрані стовпці праворуч'],
+    alignLeft: ['Ліворуч', 'Вирівняти вибрані стовпці ліворуч'], alignCenter: ['По центру', 'Вирівняти вибрані стовпці по центру'], alignRight: ['Праворуч', 'Вирівняти вибрані стовпці праворуч']
+  };
+  for (const [action, [label, tooltip]] of Object.entries(labels)) {
+    const button = document.createElement('button'); button.className = 'icon-only'; button.dataset.tableV2 = action; button.textContent = label; button.title = tooltip; button.setAttribute('aria-label', label); button.disabled = true;
     button.onpointerdown = event => event.preventDefault(); button.onclick = () => run(action); tools.insertBefore(button, document.querySelector('#table-hint'));
   }
   function clear() { for (const cell of selected) { cell.classList.remove('cell-selected'); if (!cell.className) cell.removeAttribute('class'); } selected = new Set(); }

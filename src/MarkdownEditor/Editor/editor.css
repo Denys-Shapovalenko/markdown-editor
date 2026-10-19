@@ -47,6 +47,8 @@ header { height: 86px; display: flex; align-items: center; justify-content: spac
 .table-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 7px 24px; background: #edf5ef; border-bottom: 1px solid var(--border); font-size: 12px; position: sticky; top: 86px; z-index: 3; min-height: 47px; }
 .table-tools > span { margin-right: 15px; color: var(--accent); font-weight: 600; }
 .table-tools button { padding: 6px 9px; }
+.table-tools .icon-only { display: inline-flex; align-items: center; justify-content: center; width: 36px; min-width: 36px; height: 34px; padding: 7px; }
+.table-tools .icon-only .toolbar-icon { width: 18px; height: 18px; }
 #table-hint { margin-left: auto; color: #607568; font-size: 11px; }
 #context-menu { position: fixed; z-index: 10; min-width: 255px; max-height: calc(100vh - 16px); overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 6px; box-shadow: 0 8px 30px #17382533; }
 #context-menu button { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 10px; width: 100%; text-align: left; font-size: 13px; padding: 8px 12px; }
