@@ -46,12 +46,18 @@ const paths = {
   columnRight: ['M4 4h6v16H4zM16 4v16', 'm13 12 4 4 4-4M17 16V8'],
   alignLeft: ['M4 5h16M4 10h10M4 15h16M4 20h10'],
   alignCenter: ['M4 5h16M7 10h10M4 15h16M7 20h10'],
-  alignRight: ['M4 5h16M10 10h10M4 15h16M10 20h10']
+  alignRight: ['M4 5h16M10 10h10M4 15h16M10 20h10'],
+  theme: ['M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5a8.5 8.5 0 1 0 12 12z'],
+  fontDown: ['M4 19 10 5l6 14M6.5 13h7M19 10v8M16 15h6'],
+  fontReset: ['M4 19 10 5l6 14M6.5 13h7M19 12a3 3 0 1 1 3 3'],
+  fontUp: ['M4 19 10 5l6 14M6.5 13h7M19 10v8M16 14h6M19 11v6'],
+  focus: ['M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'],
+  typewriter: ['M3 6h18v12H3zM7 10h.01M11 10h.01M15 10h.01M7 14h10M9 21h6']
 };
 
 function iconKey(button) {
   if (button.dataset.menuTrigger === 'insert-table' || button.id === 'insert-table') return 'table';
-  const key = button.dataset.command ?? button.dataset.table ?? button.dataset.tableV2 ?? button.dataset.v2 ?? button.dataset.file ?? button.dataset.icon;
+  const key = button.dataset.command ?? button.dataset.table ?? button.dataset.tableV2 ?? button.dataset.v2 ?? button.dataset.view ?? button.dataset.file ?? button.dataset.icon;
   return key === 'pasteMarkdown' ? 'paste' : key;
 }
 

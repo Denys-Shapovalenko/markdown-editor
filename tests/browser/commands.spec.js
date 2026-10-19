@@ -12,6 +12,30 @@ async function select(page, selector, start = 0, end = start) {
 async function roundTrip(page) { const source = await page.evaluate(() => window.markdownEditor.export()); await load(page, source); return source; }
 test.beforeEach(async ({ page }) => { await page.goto('/'); await page.waitForFunction(() => window.markdownEditor); });
 
+test('table toolbar actions are icons with explanatory hover and accessible labels', async ({ page }) => {
+  const buttons = page.locator('#table-tools button');
+  const details = await buttons.evaluateAll(items => items.map(button => ({
+    text: button.textContent.trim(), icon: Boolean(button.querySelector('svg.toolbar-icon')),
+    title: button.title, label: button.getAttribute('aria-label')
+  })));
+  expect(details.length).toBeGreaterThan(6);
+  for (const button of details) {
+    expect(button.text).toBe(''); expect(button.icon).toBe(true);
+    expect(button.title.length).toBeGreaterThan(0); expect(button.label.length).toBeGreaterThan(0);
+  }
+  await expect(page.locator('#table-tools [data-table="rowAdd"]')).toHaveAttribute('title', 'Додати рядок нижче');
+  await expect(page.locator('#table-tools [data-table-v2="columnLeft"]')).toHaveAttribute('title', 'Перемістити вибрані стовпці ліворуч');
+});
+
+test('main menu contains no Help item', async ({ page }) => {
+  await expect(page.locator('#menu-bar details')).toHaveCount(6);
+  await expect(page.locator('#menu-bar [data-menu="help"]')).toHaveCount(0);
+  const visualOrder = await page.locator('#menu-bar details').evaluateAll(items => items
+    .sort((a, b) => Number(getComputedStyle(a).order) - Number(getComputedStyle(b).order))
+    .map(item => item.querySelector('summary').textContent.trim()));
+  expect(visualOrder).toEqual(['Файл', 'Правка', 'Вигляд', 'Вставка', 'Формат', 'Таблиця']);
+});
+
 for (const ordered of [false, true]) test(`remove only the chosen ${ordered ? 'numbered' : 'bulleted'} item`, async ({ page }) => {
   await load(page, ordered ? '5. First\n6. Chosen\n7. Last\n' : '- First\n- Chosen\n- Last\n');
   await select(page, '#editor li:nth-child(2)', 2);
@@ -57,7 +81,7 @@ test('table commands are visible and work after a real click into an imported ce
   expect((await cell.boundingBox()).y).toBe(before.y);
   await expect(tools.getByRole('button', { name: '+ Рядок', exact: true })).toBeEnabled();
   await tools.getByRole('button', { name: '+ Рядок', exact: true }).click(); await expect(page.locator('#editor tr')).toHaveCount(4);
-  await tools.getByRole('button', { name: '+ Стовпець', exact: true }).click(); await expect(page.locator('#editor th')).toHaveCount(3);
+  await tools.getByRole('button', { name: '+ Стовпець праворуч', exact: true }).click(); await expect(page.locator('#editor th')).toHaveCount(3);
   await tools.getByRole('button', { name: '− Стовпець', exact: true }).click(); await expect(page.locator('#editor th')).toHaveCount(2);
   await tools.getByRole('button', { name: '− Рядок', exact: true }).click(); await expect(page.locator('#editor tr')).toHaveCount(3);
   await roundTrip(page); await expect(page.locator('#editor td')).toHaveText(['One', 'Two', 'Three', 'Four']);
@@ -129,7 +153,7 @@ for (const context of [false, true]) test(`delete header row via ${context ? 'me
 test('insert columns left of a middle cell and the first cell, preserving order and alignment', async ({ page }) => {
   await load(page, '| A | B |\n| :--- | ---: |\n| One | Two |\n');
   await page.locator('#editor td').nth(1).click();
-  await page.getByRole('group', { name: 'Редагування таблиці' }).getByRole('button', { name: '+ Стовпець ←', exact: true }).click();
+  await page.getByRole('group', { name: 'Редагування таблиці' }).getByRole('button', { name: '+ Стовпець ліворуч', exact: true }).click();
   await page.keyboard.type('Middle');
   await expect(page.locator('#editor th')).toHaveText(['A', '', 'B']); await expect(page.locator('#editor td')).toHaveText(['One', 'Middle', 'Two']);
   await page.locator('#editor td').first().click({ button: 'right' });

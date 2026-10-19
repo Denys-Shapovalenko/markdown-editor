@@ -2,6 +2,7 @@ import { MarkdownDocument } from './markdown.js';
 import { addMenuIcons, addToolbarIcons } from './icons.js';
 import { History, bookmark, selectBookmark } from './history.js';
 import { installFeatures } from './features.js';
+import { installViewPreferences } from './view.js';
 
 const editor = document.querySelector('#editor');
 const model = new MarkdownDocument(editor);
@@ -12,7 +13,6 @@ const contextMenu = document.querySelector('#context-menu');
 addMenuIcons(contextMenu);
 addMenuIcons(document.querySelector('#menu-bar'));
 addToolbarIcons(document.querySelector('.toolbar'));
-addToolbarIcons(document.querySelector('#table-tools'));
 const appMenus = [...document.querySelectorAll('#menu-bar details')].sort((a, b) => Number(getComputedStyle(a).order) - Number(getComputedStyle(b).order));
 for (const menu of appMenus) menu.addEventListener('toggle', () => {
   if (menu.open) for (const other of appMenus) if (other !== menu) other.open = false;
@@ -20,7 +20,7 @@ for (const menu of appMenus) menu.addEventListener('toggle', () => {
 document.addEventListener('pointerdown', event => { if (!event.target.closest('#menu-bar')) appMenus.forEach(menu => { menu.open = false; }); });
 document.addEventListener('keydown', event => {
   if (event.altKey && !event.ctrlKey && !event.metaKey && !event.isComposing) {
-    const key = { f: 'file', e: 'edit', v: 'view', i: 'insert', o: 'format', t: 'table', h: 'help' }[event.key.toLowerCase()];
+    const key = { f: 'file', e: 'edit', v: 'view', i: 'insert', o: 'format', t: 'table' }[event.key.toLowerCase()];
     if (key) { event.preventDefault(); const menu = document.querySelector(`#menu-bar [data-menu="${key}"]`); appMenus.forEach(item => { item.open = item === menu; }); menu.querySelector('summary').focus(); return; }
   }
   const open = appMenus.find(menu => menu.open);
@@ -528,5 +528,8 @@ async function receive(message) {
 window.chrome?.webview?.addEventListener('message', event => receive(event.data));
 // The same editor can be embedded in another shell without WinForms dependencies.
 features = installFeatures({ editor, model, history, post, changed, showNotice, selectionRange, elementAtCursor, protectedSelection, focusAt, rememberSelection, restoreSelection, currentCell, command, get busy() { return busy; } });
+addToolbarIcons(document.querySelector('#table-tools'));
+for (const button of document.querySelectorAll('#table-tools button')) button.addEventListener('pointerdown', event => event.preventDefault());
+installViewPreferences({ editor });
 window.markdownEditor = Object.freeze({ load, export: () => features.getSource(), get dirty() { return features.dirty; }, receive, features });
 changed(); post({ type: 'ready' });

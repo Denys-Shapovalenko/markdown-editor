@@ -41,10 +41,10 @@
     </div></details>
     <details data-menu="view"><summary>Вигляд</summary><div class="menu-popup">
       <button data-v2="outline">Зміст документа</button><button data-v2="source">Редагувати Markdown</button><button data-v2="blockSource">Джерело вибраного блока</button><hr>
+      <button data-view="theme">Темна тема</button><hr>
+      <button data-view="fontDown">Зменшити текст</button><button data-view="fontReset">Стандартний розмір</button><button data-view="fontUp">Збільшити текст</button><hr>
+      <button data-view="focus" aria-pressed="false">Фокус на абзаці</button><button data-view="typewriter" aria-pressed="false">Режим друкарської машинки</button><hr>
       <button id="load-remote-images" data-icon="image">Завантажити зовнішні зображення</button>
-    </div></details>
-    <details data-menu="help"><summary>Довідка</summary><div class="menu-popup help-popup">
-      <strong>Комбінації клавіш</strong><span>Ctrl+S — зберегти · Ctrl+O — відкрити</span><span>Ctrl+Z / Ctrl+Y — скасувати / повторити</span><span>Ctrl+B / Ctrl+I — жирний / курсив</span><span>Ctrl+F — знайти й замінити</span><span>Tab у списку — змінити вкладеність</span>
     </div></details>
   </nav>
   <nav class="toolbar" aria-label="Форматування">
@@ -71,7 +71,7 @@
     <button class="icon-only" data-menu-trigger="insert-table" title="Створити таблицю" aria-label="Таблиця"></button>
   </nav>
   <div id="table-tools" class="table-tools" role="group" aria-label="Редагування таблиці">
-    <span>Таблиця</span><button data-table="rowAdd" disabled>+ Рядок</button><button data-table="rowDelete" disabled>− Рядок</button><button data-table="columnAddLeft" title="Додати стовпець ліворуч" disabled>+ Стовпець ←</button><button data-table="columnAdd" title="Додати стовпець праворуч" disabled>+ Стовпець</button><button data-table="columnDelete" disabled>− Стовпець</button><button data-table="delete" disabled>Видалити таблицю</button><small id="table-hint">Оберіть клітинку таблиці</small>
+    <span>Таблиця</span><button class="icon-only" data-table="rowAdd" title="Додати рядок нижче" aria-label="+ Рядок" disabled>+ Рядок</button><button class="icon-only" data-table="rowDelete" title="Видалити вибраний рядок" aria-label="− Рядок" disabled>− Рядок</button><button class="icon-only" data-table="columnAddLeft" title="Додати стовпець ліворуч" aria-label="+ Стовпець ліворуч" disabled>+ Стовпець ←</button><button class="icon-only" data-table="columnAdd" title="Додати стовпець праворуч" aria-label="+ Стовпець праворуч" disabled>+ Стовпець</button><button class="icon-only" data-table="columnDelete" title="Видалити вибраний стовпець" aria-label="− Стовпець" disabled>− Стовпець</button><button class="icon-only" data-table="delete" title="Видалити всю таблицю" aria-label="Видалити таблицю" disabled>Видалити таблицю</button><small id="table-hint">Оберіть клітинку таблиці</small>
   </div>
   <div id="notice" role="status" hidden></div>
   <main>

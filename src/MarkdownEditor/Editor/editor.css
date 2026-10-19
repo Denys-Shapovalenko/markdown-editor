@@ -20,7 +20,6 @@ header { height: 86px; display: flex; align-items: center; justify-content: spac
 #menu-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: stretch; height: 36px; gap: 2px; padding: 0 22px; background: #fff; border-bottom: 1px solid var(--border); font-size: 13px; }
 #menu-bar [data-menu="file"] { order: 0; } #menu-bar [data-menu="edit"] { order: 1; } #menu-bar [data-menu="view"] { order: 2; }
 #menu-bar [data-menu="insert"] { order: 3; } #menu-bar [data-menu="format"] { order: 4; } #menu-bar [data-menu="table"] { order: 5; }
-#menu-bar [data-menu="help"] { order: 6; }
 #menu-bar details { position: relative; }
 #menu-bar summary { display: flex; align-items: center; height: 35px; list-style: none; padding: 0 11px; border-radius: 5px; cursor: default; user-select: none; }
 #menu-bar summary::-webkit-details-marker { display: none; }
@@ -45,9 +44,10 @@ header { height: 86px; display: flex; align-items: center; justify-content: spac
 .style-control select { background: transparent; border: 0; padding: 7px; width: 167px; font-size: 13px; color: #3d4f45; }
 .separator { height: 21px; width: 1px; background: var(--border); margin: 0 9px; }
 .table-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 7px 24px; background: #edf5ef; border-bottom: 1px solid var(--border); font-size: 12px; position: sticky; top: 86px; z-index: 3; min-height: 47px; }
-.table-tools:not(.table-active) { display: none; }
 .table-tools > span { margin-right: 15px; color: var(--accent); font-weight: 600; }
 .table-tools button { padding: 6px 9px; }
+.table-tools .icon-only { display: inline-flex; align-items: center; justify-content: center; width: 36px; min-width: 36px; height: 34px; padding: 7px; }
+.table-tools .icon-only .toolbar-icon { width: 18px; height: 18px; }
 #table-hint { margin-left: auto; color: #607568; font-size: 11px; }
 #context-menu { position: fixed; z-index: 10; min-width: 255px; max-height: calc(100vh - 16px); overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 6px; box-shadow: 0 8px 30px #17382533; }
 #context-menu button { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 10px; width: 100%; text-align: left; font-size: 13px; padding: 8px 12px; }
@@ -62,20 +62,24 @@ main { max-width: 840px; margin: 32px auto 70px; }
 .document-meta { display: flex; justify-content: space-between; padding: 0 3px 14px; font-size: 12px; color: #6f7e73; }
 #file-name { font-weight: 600; color: #526359; }
 #document-state { font-size: 11px; }
-#editor { padding: 54px 64px 90px; min-height: 550px; background: white; border: 1px solid var(--border); border-radius: 7px; box-shadow: 0 5px 24px #253b2c05; outline: none; font-size: 16px; line-height: 1.75; overflow-wrap: anywhere; caret-color: var(--accent); }
+#editor { padding: 54px 64px 90px; min-height: 550px; background: white; border: 1px solid var(--border); border-radius: 7px; box-shadow: 0 5px 24px #253b2c05; outline: none; font-size: var(--editor-font-size, 16px); line-height: 1.75; overflow-wrap: anywhere; caret-color: var(--accent); }
 #editor:focus { border-color: #bdcfc1; }
+#editor:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+#editor > * { transition: opacity .16s ease, filter .16s ease; }
+body.focus-mode #editor > :not(.active-block) { opacity: .2; }
+body.focus-mode #editor > .active-block { opacity: 1; }
 #editor p { margin: 0 0 16px; min-height: 1.75em; }
 #editor h1, #editor h2, #editor h3, #editor h4, #editor h5, #editor h6 { line-height: 1.3; color: #1d3026; margin: 28px 0 16px; font-weight: 650; }
 #editor > :first-child { margin-top: 0; }
-#editor h1 { font-size: 34px; letter-spacing: -.8px; }
-#editor h2 { font-size: 27px; }
-#editor h3 { font-size: 22px; }
-#editor h4 { font-size: 19px; }
-#editor h5 { font-size: 17px; }
-#editor h6 { font-size: 16px; color: #586b60; }
+#editor h1 { font-size: 2.125em; letter-spacing: -.8px; }
+#editor h2 { font-size: 1.6875em; }
+#editor h3 { font-size: 1.375em; }
+#editor h4 { font-size: 1.1875em; }
+#editor h5 { font-size: 1.0625em; }
+#editor h6 { font-size: 1em; color: #586b60; }
 #editor ul, #editor ol { padding-left: 27px; margin: 0 0 18px; }
 #editor li { padding-left: 5px; margin-bottom: 4px; }
-#editor table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 20px 0; font-size: 14px; }
+#editor table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 20px 0; font-size: .875em; }
 #editor td, #editor th { border: 1px solid #d3dfd7; padding: 9px 12px; min-width: 40px; vertical-align: top; }
 #editor th { background: #eff5f0; font-weight: 650; text-align: left; }
 #editor td:focus-within { background: #f7faf7; }
@@ -120,6 +124,41 @@ dialog textarea { display: block; width: 100%; resize: vertical; padding: 9px; b
 #paste-preview { max-height: 260px; overflow: auto; border: 1px solid var(--border); padding: 10px; }
 #paste-preview table { border-collapse: collapse; width: 100%; } #paste-preview td, #paste-preview th { border: 1px solid #bbb; padding: 4px; }
 #print-document { display: none; }
+@media screen {
+  :root[data-theme="dark"] { color-scheme: dark; color: #d8e3dc; background: #171c19; --accent: #79c6a2; --border: #3b4941; }
+  :root[data-theme="dark"] body { color: #d8e3dc; background: #171c19; }
+  :root[data-theme="dark"] header, :root[data-theme="dark"] #menu-bar, :root[data-theme="dark"] .toolbar, :root[data-theme="dark"] footer,
+  :root[data-theme="dark"] .menu-popup, :root[data-theme="dark"] #editor, :root[data-theme="dark"] #outline,
+  :root[data-theme="dark"] #context-menu, :root[data-theme="dark"] dialog { color: #d8e3dc; background: #202824; }
+  :root[data-theme="dark"] button:hover, :root[data-theme="dark"] #menu-bar summary:hover,
+  :root[data-theme="dark"] #menu-bar details[open] > summary { background: #303b34; }
+  :root[data-theme="dark"] .menu-popup button[aria-pressed=true], :root[data-theme="dark"] .toolbar button[aria-pressed=true] { color: #b6ecd0; background: #30463a; border-color: #496c57; }
+  :root[data-theme="dark"] .menu-popup kbd, :root[data-theme="dark"] .menu-popup button,
+  :root[data-theme="dark"] .brand small, :root[data-theme="dark"] .header-document-state,
+  :root[data-theme="dark"] footer, :root[data-theme="dark"] .document-meta,
+  :root[data-theme="dark"] #document-state, :root[data-theme="dark"] #file-name { color: #b2c0b6; }
+  :root[data-theme="dark"] .brand-icon { color: #a1dfbd; background: #30463a; }
+  :root[data-theme="dark"] .style-control select, :root[data-theme="dark"] #editor h1,
+  :root[data-theme="dark"] #editor h2, :root[data-theme="dark"] #editor h3,
+  :root[data-theme="dark"] #editor h4, :root[data-theme="dark"] #editor h5 { color: #e2eee6; }
+  :root[data-theme="dark"] #editor h6, :root[data-theme="dark"] #editor blockquote { color: #b8c9bd; }
+  :root[data-theme="dark"] #editor th { color: #d8e3dc; background: #2c3931; }
+  :root[data-theme="dark"] #editor td, :root[data-theme="dark"] #editor th { border-color: #46554b; }
+  :root[data-theme="dark"] #editor td:focus-within { background: #27352d; }
+  :root[data-theme="dark"] #editor code, :root[data-theme="dark"] #editor pre { color: #d8e3dc; background: #29332d; }
+  :root[data-theme="dark"] .opaque { color: #d8e3dc; background: #29332d; border-color: #526158; }
+  :root[data-theme="dark"] .opaque small, :root[data-theme="dark"] .opaque-icon { color: #a8b7ad; }
+  :root[data-theme="dark"] #search-panel, :root[data-theme="dark"] .table-tools { color: #d8e3dc; background: #28352d; }
+  :root[data-theme="dark"] #search-panel small, :root[data-theme="dark"] #table-hint { color: #b8c9bd; }
+  :root[data-theme="dark"] #search-panel input, :root[data-theme="dark"] dialog input,
+  :root[data-theme="dark"] dialog textarea, :root[data-theme="dark"] #source-editor { color: #d8e3dc; background: #171e19; border-color: #46554b; }
+  :root[data-theme="dark"] dialog p { color: #b8c9bd; }
+  :root[data-theme="dark"] #notice { color: #deebc5; background: #303725; border-color: #536345; }
+  :root[data-theme="dark"] #notice.error { color: #ffd6cf; background: #452c28; border-color: #70473f; }
+  :root[data-theme="dark"] #context-menu button:focus { background: #30463a; }
+  :root[data-theme="dark"] .menu-popup hr, :root[data-theme="dark"] .menu-divider { background: #46554b; }
+  :root[data-theme="dark"] ::highlight(search-results) { color: #171c19; background: #e2bd58; }
+}
 @media print {
   body { min-width: 0; background: white; color: #17261f; }
   body > * { display: none !important; }
