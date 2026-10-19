@@ -3,32 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https: http: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Markdown Редактор</title>
   <link rel="stylesheet" href="editor.css">
 </head>
 <body>
   <header>
     <div class="brand"><span class="brand-icon">M<span>↓</span></span><div><strong>Markdown Редактор</strong><small>Документ у фокусі</small></div></div>
-    <div class="file-actions" role="group" aria-label="Файл">
-      <button data-file="new" title="Новий документ (Ctrl+N)">Новий</button>
-      <button data-file="open" title="Відкрити (Ctrl+O)">Відкрити</button>
-      <button data-file="saveAs" title="Зберегти як (Ctrl+Shift+S)">Зберегти як…</button>
-      <button class="primary" data-file="save" title="Зберегти (Ctrl+S)">Зберегти <span>↗</span></button>
-    </div>
+    <span class="header-document-state" id="header-document-state">Без назви</span>
   </header>
+  <nav id="menu-bar" aria-label="Головне меню">
+    <details data-menu="file"><summary>Файл</summary><div class="menu-popup">
+      <button data-file="new">Новий <kbd>Ctrl+N</kbd></button><button data-file="open">Відкрити… <kbd>Ctrl+O</kbd></button><hr>
+      <button data-file="save">Зберегти <kbd>Ctrl+S</kbd></button><button data-file="saveAs">Зберегти як… <kbd>Ctrl+Shift+S</kbd></button><hr>
+      <button data-v2="recovery">Відновити чернетку</button><button data-v2="reload">Перечитати файл</button><hr>
+      <button data-v2="print">Друк… <kbd>Ctrl+P</kbd></button><button data-v2="pdf">Експорт у PDF…</button><button data-v2="html">Експорт у HTML…</button>
+    </div></details>
+    <details data-menu="edit"><summary>Правка</summary><div class="menu-popup">
+      <button data-v2="undo">Скасувати <kbd>Ctrl+Z</kbd></button><button data-v2="redo">Повторити <kbd>Ctrl+Y</kbd></button><hr>
+      <button data-v2="cut">Вирізати <kbd>Ctrl+X</kbd></button><button data-v2="copy">Копіювати <kbd>Ctrl+C</kbd></button><button data-v2="paste">Вставити <kbd>Ctrl+V</kbd></button><button data-v2="pasteMarkdown">Вставити Markdown <kbd>Ctrl+Shift+V</kbd></button><hr>
+      <button data-v2="find">Знайти / замінити <kbd>Ctrl+F</kbd></button>
+    </div></details>
+    <details data-menu="insert"><summary>Вставка</summary><div class="menu-popup">
+      <button id="insert-table" title="Створити таблицю">Таблиця…</button><button data-v2="link">Посилання…</button><button data-v2="image">Зображення…</button><button data-v2="task">Чекліст</button><hr>
+      <button data-v2="inlineCode">Код у рядку</button><button data-v2="code">Блок коду…</button><button data-v2="quote">Цитата</button><button data-v2="rule">Розділювач</button>
+    </div></details>
+    <details data-menu="format"><summary>Формат</summary><div class="menu-popup">
+      <button data-command="bold"><b>Жирний</b> <kbd>Ctrl+B</kbd></button><button data-command="italic"><i>Курсив</i> <kbd>Ctrl+I</kbd></button><button data-command="strikeThrough"><s>Закреслений</s> <kbd>Ctrl+Shift+X</kbd></button><hr>
+      <button data-command="insertUnorderedList">Маркований список</button><button data-command="insertOrderedList">Нумерований список</button><hr>
+      <button data-v2="indent">Вкласти пункт <kbd>Tab</kbd></button><button data-v2="outdent">Підняти рівень <kbd>Shift+Tab</kbd></button>
+    </div></details>
+    <details data-menu="table"><summary>Таблиця</summary><div class="menu-popup">
+      <button data-table="rowAdd">Додати рядок нижче</button><button data-table="rowDelete">Видалити рядок</button><hr>
+      <button data-table="columnAddLeft">Додати стовпець ліворуч</button><button data-table="columnAdd">Додати стовпець праворуч</button><button data-table="columnDelete">Видалити стовпець</button><button data-table="delete">Видалити таблицю</button><hr>
+      <button data-table-v2="selectRow">Виділити рядок</button><button data-table-v2="selectColumn">Виділити стовпець</button><button data-table-v2="rowUp">Перемістити рядки вгору</button><button data-table-v2="rowDown">Перемістити рядки вниз</button><button data-table-v2="columnLeft">Перемістити стовпці ліворуч</button><button data-table-v2="columnRight">Перемістити стовпці праворуч</button><hr>
+      <button data-table-v2="alignLeft">Вирівняти ліворуч</button><button data-table-v2="alignCenter">Вирівняти по центру</button><button data-table-v2="alignRight">Вирівняти праворуч</button>
+    </div></details>
+    <details data-menu="view"><summary>Вигляд</summary><div class="menu-popup">
+      <button data-v2="outline">Зміст документа</button><button data-v2="source">Редагувати Markdown</button><button data-v2="blockSource">Джерело вибраного блока</button><hr>
+      <button id="load-remote-images" data-icon="image">Завантажити зовнішні зображення</button>
+    </div></details>
+    <details data-menu="help"><summary>Довідка</summary><div class="menu-popup help-popup">
+      <strong>Комбінації клавіш</strong><span>Ctrl+S — зберегти · Ctrl+O — відкрити</span><span>Ctrl+Z / Ctrl+Y — скасувати / повторити</span><span>Ctrl+B / Ctrl+I — жирний / курсив</span><span>Ctrl+F — знайти й замінити</span><span>Tab у списку — змінити вкладеність</span>
+    </div></details>
+  </nav>
   <nav class="toolbar" aria-label="Форматування">
+    <button class="icon-only" data-v2="undo" title="Скасувати (Ctrl+Z)" aria-label="Скасувати"></button>
+    <button class="icon-only" data-v2="redo" title="Повторити (Ctrl+Y)" aria-label="Повторити"></button>
+    <button class="icon-only" data-file="open" title="Відкрити (Ctrl+O)" aria-label="Відкрити"></button>
+    <button class="icon-only" data-file="save" title="Зберегти (Ctrl+S)" aria-label="Зберегти"></button>
+    <button class="icon-only" data-v2="copy" title="Копіювати (Ctrl+C)" aria-label="Копіювати"></button>
+    <button class="icon-only" data-v2="cut" title="Вирізати (Ctrl+X)" aria-label="Вирізати"></button>
+    <button class="icon-only" data-v2="paste" title="Вставити (Ctrl+V)" aria-label="Вставити"></button>
+    <span class="separator"></span>
     <label class="style-control"><span class="sr-only">Стиль абзацу</span><select id="block-style" aria-label="Стиль абзацу"><option value="p">Звичайний текст</option><option value="h1">Заголовок 1</option><option value="h2">Заголовок 2</option><option value="h3">Заголовок 3</option><option value="h4">Заголовок 4</option><option value="h5">Заголовок 5</option><option value="h6">Заголовок 6</option></select></label>
     <span class="separator"></span>
-    <button data-command="bold" title="Жирний (Ctrl+B)" aria-label="Жирний" aria-pressed="false"><b>B</b></button>
-    <button data-command="italic" title="Курсив (Ctrl+I)" aria-label="Курсив" aria-pressed="false"><i>I</i></button>
-    <button data-command="strikeThrough" title="Закреслений (Ctrl+Shift+X)" aria-label="Закреслений" aria-pressed="false"><s>S</s></button>
+    <button class="icon-only" data-command="bold" title="Жирний (Ctrl+B)" aria-label="Жирний" aria-pressed="false"></button>
+    <button class="icon-only" data-command="italic" title="Курсив (Ctrl+I)" aria-label="Курсив" aria-pressed="false"></button>
+    <button class="icon-only" data-command="strikeThrough" title="Закреслений (Ctrl+Shift+X)" aria-label="Закреслений" aria-pressed="false"></button>
     <span class="separator"></span>
-    <button data-command="insertUnorderedList" title="Маркований список" aria-label="Маркований список" aria-pressed="false">• ≡</button>
-    <button data-command="insertOrderedList" title="Нумерований список" aria-label="Нумерований список" aria-pressed="false">1. ≡</button>
+    <button class="icon-only" data-command="insertUnorderedList" title="Маркований список" aria-label="Маркований список" aria-pressed="false"></button>
+    <button class="icon-only" data-command="insertOrderedList" title="Нумерований список" aria-label="Нумерований список" aria-pressed="false"></button>
     <span class="separator"></span>
-    <button id="insert-table" title="Створити таблицю">▦ <span>Таблиця</span></button>
-    <span class="toolbar-hint">Markdown · GFM</span>
+    <button class="icon-only" data-v2="link" title="Вставити посилання" aria-label="Посилання"></button>
+    <button class="icon-only" data-v2="image" title="Вставити зображення" aria-label="Зображення"></button>
+    <button class="icon-only" data-v2="find" title="Знайти або замінити (Ctrl+F)" aria-label="Знайти"></button>
+    <button class="icon-only" data-menu-trigger="insert-table" title="Створити таблицю" aria-label="Таблиця"></button>
   </nav>
   <div id="table-tools" class="table-tools" role="group" aria-label="Редагування таблиці">
     <span>Таблиця</span><button data-table="rowAdd" disabled>+ Рядок</button><button data-table="rowDelete" disabled>− Рядок</button><button data-table="columnAddLeft" title="Додати стовпець ліворуч" disabled>+ Стовпець ←</button><button data-table="columnAdd" title="Додати стовпець праворуч" disabled>+ Стовпець</button><button data-table="columnDelete" disabled>− Стовпець</button><button data-table="delete" disabled>Видалити таблицю</button><small id="table-hint">Оберіть клітинку таблиці</small>

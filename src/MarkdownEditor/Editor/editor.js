@@ -1,5 +1,7 @@
 import { MarkdownDocument } from './markdown.js';
-import { addMenuIcons } from './icons.js';
+import { addMenuIcons, addToolbarIcons } from './icons.js';
+import { History, bookmark, selectBookmark } from './history.js';
+import { installFeatures } from './features.js';
 
 const editor = document.querySelector('#editor');
 const model = new MarkdownDocument(editor);
@@ -8,9 +10,43 @@ const notice = document.querySelector('#notice');
 const tableDialog = document.querySelector('#table-dialog');
 const contextMenu = document.querySelector('#context-menu');
 addMenuIcons(contextMenu);
+addMenuIcons(document.querySelector('#menu-bar'));
+addToolbarIcons(document.querySelector('.toolbar'));
+addToolbarIcons(document.querySelector('#table-tools'));
+const appMenus = [...document.querySelectorAll('#menu-bar details')].sort((a, b) => Number(getComputedStyle(a).order) - Number(getComputedStyle(b).order));
+for (const menu of appMenus) menu.addEventListener('toggle', () => {
+  if (menu.open) for (const other of appMenus) if (other !== menu) other.open = false;
+});
+document.addEventListener('pointerdown', event => { if (!event.target.closest('#menu-bar')) appMenus.forEach(menu => { menu.open = false; }); });
+document.addEventListener('keydown', event => {
+  if (event.altKey && !event.ctrlKey && !event.metaKey && !event.isComposing) {
+    const key = { f: 'file', e: 'edit', v: 'view', i: 'insert', o: 'format', t: 'table', h: 'help' }[event.key.toLowerCase()];
+    if (key) { event.preventDefault(); const menu = document.querySelector(`#menu-bar [data-menu="${key}"]`); appMenus.forEach(item => { item.open = item === menu; }); menu.querySelector('summary').focus(); return; }
+  }
+  const open = appMenus.find(menu => menu.open);
+  if (event.key === 'Escape' && open) { event.preventDefault(); open.open = false; open.querySelector('summary').focus(); return; }
+  if (!open) return;
+  if (['ArrowLeft', 'ArrowRight'].includes(event.key) && event.target.matches('#menu-bar summary')) {
+    event.preventDefault(); const index = appMenus.indexOf(open); const next = (index + (event.key === 'ArrowRight' ? 1 : -1) + appMenus.length) % appMenus.length;
+    appMenus.forEach((item, i) => { item.open = i === next; }); appMenus[next].querySelector('summary').focus(); return;
+  }
+  const items = [...open.querySelectorAll('.menu-popup button:not(:disabled):not([hidden])')];
+  if (event.key === 'ArrowDown' && event.target.matches('#menu-bar summary')) { event.preventDefault(); items[0]?.focus(); return; }
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) || !items.includes(event.target)) return;
+  event.preventDefault(); let index = items.indexOf(event.target);
+  index = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+  items[index]?.focus();
+});
+document.querySelector('#menu-bar').addEventListener('click', event => {
+  if (event.target.closest('.menu-popup button')) setTimeout(() => appMenus.forEach(menu => { menu.open = false; }), 0);
+});
 let savedRange = null;
 let busy = false;
 let activeCell = null;
+let features = null;
+const history = new History(() => ({ document: model.snapshot(), selection: bookmark(editor) }), state => {
+  model.restore(state.document); savedRange = null; activeCell = null; selectBookmark(editor, state.selection); rememberSelection();
+});
 
 document.execCommand('defaultParagraphSeparator', false, 'p');
 document.execCommand('styleWithCSS', false, false);
@@ -112,6 +148,10 @@ function appendParagraphItems(container, list) {
   flush();
 }
 function selectedListUnits(range) {
+  if (range.collapsed) {
+    const item = elementAtCursor()?.closest?.('li');
+    if (item) return [item];
+  }
   return selectedTopBlocks(range).flatMap(block => {
     if (!['UL', 'OL'].includes(block.tagName)) return [block];
     if (range.collapsed) {
@@ -129,7 +169,7 @@ function listSegment(source, index, tag = source.tagName) {
   return list;
 }
 function mergeAdjacentLists() {
-  for (const list of [...editor.children]) {
+  for (const list of [...editor.querySelectorAll('ul,ol')]) {
     if (!list.isConnected || !['UL', 'OL'].includes(list.tagName)) continue;
     while (list.nextElementSibling?.tagName === list.tagName) {
       const following = list.nextElementSibling; list.append(...following.childNodes); following.remove();
@@ -138,8 +178,8 @@ function mergeAdjacentLists() {
 }
 function toggleList(ordered) {
   const range = selectionRange(); if (!range || currentCell() || protectedSelection()) return;
-  const blocks = selectedTopBlocks(range);
   const units = selectedListUnits(range);
+  const blocks = [...new Set(units.map(unit => unit.tagName === 'LI' ? unit.parentElement : unit))];
   if (!units.length || units.some(unit => unit.tagName !== 'LI' && !paragraphTags.has(unit.tagName))) return;
   const restore = selectionBookmark();
   const tag = ordered ? 'OL' : 'UL';
@@ -195,6 +235,9 @@ function insertParagraph() {
   }
   const tail = document.createRange(); tail.selectNodeContents(block); tail.setStart(range.startContainer, range.startOffset);
   const next = document.createElement(block.tagName === 'LI' ? 'li' : 'p'); next.append(tail.extractContents());
+  if (next.tagName === 'LI' && block.querySelector(':scope > input[type=checkbox]')) {
+    const checkbox = block.querySelector(':scope > input[type=checkbox]').cloneNode(); checkbox.removeAttribute('checked'); next.prepend(checkbox);
+  }
   for (const paragraph of [block, next]) if (!paragraph.textContent && !paragraph.querySelector('br')) paragraph.append(document.createElement('br'));
   block.after(next); focusAt(next); changed();
 }
@@ -204,9 +247,9 @@ function updateToolbar() {
   const units = range && !cell ? selectedListUnits(range) : [];
   document.querySelector('#table-hint').textContent = cell ? `Рядок ${cell.parentElement.rowIndex + 1} · стовпець ${cell.cellIndex + 1}` : 'Оберіть клітинку таблиці';
   document.querySelectorAll('[data-table]').forEach(button => {
-    button.disabled = busy || !cell || (button.dataset.table === 'columnDelete' && cell.parentElement.cells.length === 1);
+    button.disabled = busy || features?.sourceMode || !cell || (button.dataset.table === 'columnDelete' && cell.parentElement.cells.length === 1);
   });
-  const unavailable = busy || protectedSelection();
+  const unavailable = busy || features?.sourceMode || protectedSelection();
   for (const button of document.querySelectorAll('[data-command]')) {
     const command = button.dataset.command;
     button.disabled = unavailable || (Boolean(cell) && command.includes('List'));
@@ -218,20 +261,24 @@ function updateToolbar() {
   const heading = elementAtCursor()?.closest?.('p,h1,h2,h3,h4,h5,h6');
   styleSelect.value = heading?.tagName.toLowerCase() ?? 'p';
   document.querySelector('#insert-table').disabled = unavailable || Boolean(cell);
+  features?.tables.update();
 }
-function changed() {
+function changed(kind = 'command', record = true) {
   if (!editor.hasChildNodes()) { const p = document.createElement('p'); p.append(document.createElement('br')); editor.append(p); }
-  const dirty = model.dirty;
+  const dirty = features?.dirty ?? model.dirty;
   document.querySelector('#document-state').textContent = dirty ? 'Є незбережені зміни' : 'Усі зміни збережено';
+  document.querySelector('#header-document-state').textContent = `${document.querySelector('#file-name').textContent}${dirty ? ' •' : ''}`;
   document.querySelector('#footer-status').textContent = dirty ? 'Редагування документа' : 'Готово до роботи';
   const clone = editor.cloneNode(true); clone.querySelectorAll('.opaque').forEach(node => node.remove());
   const count = (clone.textContent.trim().match(/\S+/g) ?? []).length;
   document.querySelector('#word-count').textContent = `${count} слів`;
-  post({ type: 'changed', dirty }); updateToolbar();
+  if (record && !features?.composing) history.commit(kind);
+  post({ type: 'changed', dirty }); updateToolbar(); features?.update();
 }
 function command(name, value = null) {
   if (busy) return;
   restoreSelection();
+  history.before();
   if (protectedSelection()) { showNotice('Захищені блоки не можна змінювати. Виберіть текст поза ними.'); return; }
   if (currentCell() && (name.includes('List') || name === 'formatBlock')) return;
   if (name === 'insertUnorderedList' || name === 'insertOrderedList') toggleList(name === 'insertOrderedList');
@@ -257,6 +304,7 @@ editor.addEventListener('click', event => {
   }
 });
 for (const button of document.querySelectorAll('.toolbar button, .table-tools button, #context-menu button')) button.addEventListener('pointerdown', event => event.preventDefault());
+for (const button of document.querySelectorAll('#menu-bar .menu-popup button')) button.addEventListener('pointerdown', event => { event.preventDefault(); rememberSelection(); });
 styleSelect.addEventListener('pointerdown', rememberSelection);
 for (const button of document.querySelectorAll('[data-command]')) button.addEventListener('click', () => command(button.dataset.command));
 styleSelect.addEventListener('change', () => {
@@ -275,6 +323,7 @@ for (const button of document.querySelectorAll('[data-file]')) button.addEventLi
 document.querySelector('#insert-table').addEventListener('click', () => {
   rememberSelection(); tableDialog.showModal(); document.querySelector('#table-rows').focus();
 });
+document.querySelectorAll('[data-menu-trigger]').forEach(button => button.addEventListener('click', () => document.getElementById(button.dataset.menuTrigger).click()));
 document.querySelector('#cancel-table').addEventListener('click', () => { tableDialog.close(); restoreSelection(); });
 tableDialog.addEventListener('cancel', () => setTimeout(restoreSelection, 0));
 document.querySelector('#table-form').addEventListener('submit', event => {
@@ -392,9 +441,11 @@ document.addEventListener('pointerdown', event => { if (!contextMenu.contains(ev
 window.addEventListener('scroll', () => closeContextMenu());
 window.addEventListener('resize', () => closeContextMenu());
 
-editor.addEventListener('input', () => { rememberSelection(); changed(); });
+editor.addEventListener('input', event => { rememberSelection(); changed(['insertText', 'deleteContentBackward', 'deleteContentForward'].includes(event.inputType) ? 'typing' : 'command'); });
 editor.addEventListener('beforeinput', event => {
-  if (busy || ['historyUndo', 'historyRedo', 'insertFromPaste', 'insertFromDrop', 'deleteByCut'].includes(event.inputType) || protectedSelection()) {
+  history.before();
+  if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') { event.preventDefault(); if (!busy) features.undo(event.inputType === 'historyRedo'); return; }
+  if (busy || ['insertFromPaste', 'insertFromDrop', 'deleteByCut'].includes(event.inputType) || protectedSelection()) {
     event.preventDefault();
     if (protectedSelection()) showNotice('Захищений блок зберігається без змін.');
     return;
@@ -411,10 +462,9 @@ editor.addEventListener('beforeinput', event => {
     }
   }
 });
-for (const name of ['copy', 'cut', 'paste', 'drop', 'dragstart']) editor.addEventListener(name, event => {
-  event.preventDefault(); showNotice('Буфер обміну та перетягування не входять до першої версії.');
-});
+for (const name of ['drop', 'dragstart']) editor.addEventListener(name, event => event.preventDefault());
 document.addEventListener('keydown', event => {
+  if (event.target.matches('input,textarea,select') && event.target.id !== 'source-editor') return;
   if ((event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) && selectionRange() && !busy) {
     event.preventDefault(); const rect = selectionRange().getBoundingClientRect(); showContextMenu(rect.left, rect.bottom); return;
   }
@@ -423,11 +473,9 @@ document.addEventListener('keydown', event => {
     const key = event.code;
     const file = { KeyS: event.shiftKey ? 'saveAs' : 'save', KeyO: 'open', KeyN: 'new' }[key];
     if (file) { event.preventDefault(); if (!busy) document.querySelector(`[data-file="${file}"]`).click(); return; }
+    if (event.target.id === 'source-editor') return;
     const formatting = { KeyB: 'bold', KeyI: 'italic', KeyX: event.shiftKey ? 'strikeThrough' : null }[key];
     if (formatting) { event.preventDefault(); command(formatting); return; }
-    if (['KeyZ', 'KeyY', 'KeyC', 'KeyV', 'KeyX'].includes(key) && selectionRange()) {
-      event.preventDefault(); showNotice('Undo/Redo та буфер обміну не входять до першої версії.'); return;
-    }
   }
   if (busy || !selectionRange()) return;
   const cell = currentCell();
@@ -442,17 +490,19 @@ document.addEventListener('keydown', event => {
     if (target < 0) return;
     if (target >= cells.length) { const row = addRow(table); focusAt(row.cells[event.key === 'Enter' ? cell.cellIndex : 0]); changed(); }
     else focusAt(cells[target]);
-  } else if (event.key === 'Tab' && elementAtCursor()?.closest?.('li')) event.preventDefault();
+  } else if (event.key === 'Tab' && elementAtCursor()?.closest?.('li')) { event.preventDefault(); features.indent(event.shiftKey); }
 });
 
 function load(markdown, name = 'Без назви') {
   if (new TextEncoder().encode(markdown).length > 5 * 1024 * 1024) throw new Error('Файл перевищує ліміт 5 MiB.');
   const info = model.load(markdown); savedRange = null; activeCell = null; closeContextMenu();
+  features?.reset(); history.reset();
   document.querySelector('#file-name').textContent = name;
+  document.querySelector('#header-document-state').textContent = name;
   showNotice(info.protectedBlocks ? `Захищених блоків: ${info.protectedBlocks}. Вони збережуться у Markdown без змін.` : '');
-  changed(); return info;
+  changed('load', false); return info;
 }
-function receive(message) {
+async function receive(message) {
   if (message.type === 'busy') {
     busy = Boolean(message.value); editor.contentEditable = String(!busy);
     if (busy) closeContextMenu();
@@ -463,14 +513,20 @@ function receive(message) {
   const response = { type: 'response', requestId: message.requestId };
   try {
     if (message.type === 'load') Object.assign(response, load(message.payload.markdown, message.payload.name));
-    else if (message.type === 'export') response.markdown = model.export();
-    else if (message.type === 'state') response.dirty = model.dirty;
-    else if (message.type === 'saved') { model.markSaved(); document.querySelector('#file-name').textContent = message.payload.name; changed(); }
+    else if (message.type === 'export') response.markdown = features.getSource();
+    else if (message.type === 'state') response.dirty = features.dirty;
+    else if (message.type === 'saved') { features.applySource(); model.markSaved(); document.querySelector('#file-name').textContent = message.payload.name; changed('saved', false); }
+    else if (message.type === 'awaitImages') {
+      await Promise.race([Promise.allSettled([...document.querySelectorAll('#print-document img,#editor img')].filter(img => img.hasAttribute('src')).map(img => img.decode())), new Promise(resolve => setTimeout(resolve, 5000))]);
+      await document.fonts.ready;
+    }
+    else if (features.receive(message, response)) { /* Feature-specific host requests. */ }
     else throw new Error('Невідома команда оболонки.');
   } catch (error) { response.error = error.message; showNotice(error.message, true); }
   post(response); return response;
 }
 window.chrome?.webview?.addEventListener('message', event => receive(event.data));
 // The same editor can be embedded in another shell without WinForms dependencies.
-window.markdownEditor = Object.freeze({ load, export: () => model.export(), get dirty() { return model.dirty; }, receive });
+features = installFeatures({ editor, model, history, post, changed, showNotice, selectionRange, elementAtCursor, protectedSelection, focusAt, rememberSelection, restoreSelection, currentCell, command, get busy() { return busy; } });
+window.markdownEditor = Object.freeze({ load, export: () => features.getSource(), get dirty() { return features.dirty; }, receive, features });
 changed(); post({ type: 'ready' });

@@ -199,7 +199,7 @@ test('Enter exits an empty item in the middle and keeps the following items', as
   expect(rendered).toContain('<p>Outside</p>');
 });
 test('table creation, text, Tab, Enter, rows and columns', async ({ page }) => {
-  await page.locator('#editor').click(); await page.getByRole('button', { name: '▦ Таблиця', exact: true }).click();
+  await page.locator('#editor').click(); await page.locator('.toolbar [data-menu-trigger="insert-table"]').click();
   await page.locator('#table-rows').fill('2'); await page.locator('#table-columns').fill('2'); await page.getByRole('button', { name: 'Створити', exact: true }).click();
   await page.keyboard.type('Назва'); await page.keyboard.press('Tab'); await page.keyboard.type('Стан');
   await page.keyboard.press('Tab'); await page.keyboard.type('a|b'); await page.keyboard.press('Tab'); await page.keyboard.type('Готово');
@@ -235,7 +235,7 @@ test('deleting a protected block fails closed instead of silently dropping data'
   expect(error).toContain('Збереження зупинено');
 });
 test('selection across protected block cannot replace content', async ({ page }) => {
-  await load(page, 'Before\n\n```\nKeep me\n```\n\nAfter\n');
+  await load(page, 'Before\n\n<div>Keep me</div>\n\nAfter\n');
   await page.locator('#editor').evaluate(editor => {
     editor.focus(); const range = document.createRange(); range.selectNodeContents(editor); const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
   });
@@ -294,9 +294,9 @@ test('typed HTML remains literal text after Markdown export', async ({ page }) =
   await expect(page.locator('#editor p')).toHaveText('<script>alert(1)</script>');
 });
 test('Backspace next to protected block keeps it intact', async ({ page }) => {
-  await load(page, 'Before\n\n```\nKeep\n```\n\nAfter\n');
+  await load(page, 'Before\n\n<div>Keep</div>\n\nAfter\n');
   await select(page, '#editor > p:last-child', 0, 0); await page.keyboard.press('Backspace');
-  expect(await output(page)).toContain('```\nKeep\n```'); await expect(page.locator('.opaque')).toHaveCount(1);
+  expect(await output(page)).toContain('<div>Keep</div>'); await expect(page.locator('.opaque')).toHaveCount(1);
 });
 test('edited full document renders supported structures in an independent Markdown engine', async ({ page }) => {
   await load(page, supported); await select(page, '#editor h1', 0, 0); await page.keyboard.type('Нові ');

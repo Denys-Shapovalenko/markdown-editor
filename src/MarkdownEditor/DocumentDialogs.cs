@@ -25,6 +25,7 @@ internal sealed class WindowsDocumentDialogs : IDocumentDialogs
 // Used only by the explicit --smoke-test mode; the normal application always uses system dialogs.
 internal sealed class SmokeDocumentDialogs : IDocumentDialogs
 {
+    public ConflictDecision ConflictAnswer { get; set; } = ConflictDecision.Cancel;
     public DialogResult Answer { get; set; } = DialogResult.Cancel;
     public string? OpenPath { get; set; }
     public string? SavePath { get; set; }

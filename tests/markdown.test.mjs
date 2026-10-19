@@ -9,12 +9,13 @@ test('MVP fixture uses editable supported blocks', async () => {
   assert(tokens.length > 10);
   assert(tokens.every(t => t.supported));
 });
-test('unknown constructs are kept whole, including nested lists and raw HTML', async () => {
+test('expanded syntax is editable while unknown HTML/definitions remain protected', async () => {
   const source = await readFile(new URL('./fixtures/protected.md', import.meta.url), 'utf8');
   const tokens = tokenize(source);
   assert.equal(tokens.map(t => t.originalRaw ?? t.raw).join(''), source);
-  assert(tokens.filter(t => !t.supported && t.type !== 'space').length >= 8);
-  assert.equal(tokens.find(t => t.type === 'list').supported, false);
+  assert(tokens.filter(t => !t.supported && t.type !== 'space').length >= 1);
+  assert.equal(tokens.find(t => t.type === 'list').supported, true);
+  assert.equal(tokens.find(t => t.type === 'html').supported, false);
 });
 test('original CRLF and CR source slices are retained', () => {
   for (const newline of ['\n', '\r\n', '\r']) {

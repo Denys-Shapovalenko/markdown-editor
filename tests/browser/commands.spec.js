@@ -99,8 +99,11 @@ test('context menu keyboard navigation activates table commands', async ({ page 
   await load(page, tableSource); await page.locator('#editor td').first().click(); await page.keyboard.press('Shift+F10');
   const menu = page.getByRole('menu', { name: 'Команди редактора' });
   await expect(menu).toBeVisible(); await page.keyboard.press('Home');
-  // Formatting has three available entries, then table row operations (lists are disabled in cells).
-  await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown');
+  // Traverse enabled menu items, including the new clipboard/history entries.
+  for (let i = 0; i < 15; i++) {
+    if (await menu.getByRole('menuitem', { name: 'Додати рядок нижче', exact: true }).evaluate(node => node === document.activeElement)) break;
+    await page.keyboard.press('ArrowDown');
+  }
   await expect(menu.getByRole('menuitem', { name: 'Додати рядок нижче', exact: true })).toBeFocused();
   await page.keyboard.press('Enter'); await expect(page.locator('#editor tr')).toHaveCount(4); await expect(menu).toBeHidden();
 });

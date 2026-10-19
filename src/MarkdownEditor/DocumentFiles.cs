@@ -2,6 +2,8 @@ using System.Text;
 
 namespace MarkdownEditor;
 
+internal sealed class DocumentConflictException(string message) : IOException(message);
+
 internal static class DocumentFiles
 {
     public const int MaxBytes = 5 * 1024 * 1024;
@@ -42,7 +44,7 @@ internal static class DocumentFiles
         void CheckConflict()
         {
             if (checkConflict && (!File.Exists(fullPath) || expectedBytes is null || !ReadBytes(fullPath).AsSpan().SequenceEqual(expectedBytes)))
-                throw new IOException("Файл змінився або був видалений іншою програмою. Використайте «Зберегти як», щоб зберегти свою версію.");
+                throw new DocumentConflictException("Файл змінився або був видалений іншою програмою.");
         }
         CheckConflict();
         var temporary = Path.Combine(Path.GetDirectoryName(fullPath)!, $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
