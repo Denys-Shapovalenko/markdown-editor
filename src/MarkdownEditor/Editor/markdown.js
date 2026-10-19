@@ -7,7 +7,12 @@ export function inlineSupported(tokens = []) {
 }
 export function htmlOf(node, inner = false) {
   const clone = node.cloneNode(true);
-  for (const selected of clone.querySelectorAll('.cell-selected')) { selected.classList.remove('cell-selected'); if (!selected.className) selected.removeAttribute('class'); }
+  const selectedCells = [...clone.querySelectorAll('.cell-selected, .active-block')];
+  if (clone.nodeType === 1 && clone.matches('.cell-selected, .active-block')) selectedCells.unshift(clone);
+  for (const selected of selectedCells) {
+    selected.classList.remove('cell-selected', 'active-block');
+    if (!selected.className) selected.removeAttribute('class');
+  }
   for (const img of clone.querySelectorAll('img[data-src]')) if (/^https?:/i.test(img.dataset.src)) img.removeAttribute('src');
   return inner ? clone.innerHTML : clone.outerHTML;
 }

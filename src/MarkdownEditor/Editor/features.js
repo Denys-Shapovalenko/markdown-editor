@@ -1,4 +1,4 @@
-import { MarkdownDocument, blockMarkdown, safeUrl } from './markdown.js';
+import { MarkdownDocument, blockMarkdown, htmlOf, safeUrl } from './markdown.js';
 import { bookmark, selectBookmark } from './history.js';
 import { installClipboard } from './clipboard.js';
 import { installTableFeatures } from './table-features.js';
@@ -163,7 +163,7 @@ export function installFeatures(ctx) {
     if (sourceMode || ctx.busy) return;
     rememberSelection(); blockTarget = topBlock(); if (!blockTarget) return;
     const record = model.records.get(blockTarget.dataset.sourceId);
-    document.querySelector('#block-source-text').value = record && blockTarget.outerHTML === record.html ? record.raw : blockMarkdown(blockTarget);
+    document.querySelector('#block-source-text').value = record && htmlOf(blockTarget) === record.html ? record.raw : blockMarkdown(blockTarget);
     blockDialog.showModal(); document.querySelector('#block-source-text').focus();
   }
   blockDialog.querySelector('form').onsubmit = event => {

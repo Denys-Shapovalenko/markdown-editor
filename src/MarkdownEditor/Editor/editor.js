@@ -2,6 +2,7 @@ import { MarkdownDocument } from './markdown.js';
 import { addMenuIcons, addToolbarIcons } from './icons.js';
 import { History, bookmark, selectBookmark } from './history.js';
 import { installFeatures } from './features.js';
+import { installViewPreferences } from './view.js';
 
 const editor = document.querySelector('#editor');
 const model = new MarkdownDocument(editor);
@@ -528,5 +529,6 @@ async function receive(message) {
 window.chrome?.webview?.addEventListener('message', event => receive(event.data));
 // The same editor can be embedded in another shell without WinForms dependencies.
 features = installFeatures({ editor, model, history, post, changed, showNotice, selectionRange, elementAtCursor, protectedSelection, focusAt, rememberSelection, restoreSelection, currentCell, command, get busy() { return busy; } });
+installViewPreferences({ editor });
 window.markdownEditor = Object.freeze({ load, export: () => features.getSource(), get dirty() { return features.dirty; }, receive, features });
 changed(); post({ type: 'ready' });

@@ -68,4 +68,4 @@ Marked використовується лише для розбору Markdown.
 
 Стан перевірок і ручне приймання: [docs/Validation.md](docs/Validation.md).
 
-Дослідження розвитку: [конкуренти й можливості Markdown](docs/Competitor-analysis.md), [список функцій](docs/Editor-feature-backlog.md), [можливості для відмінності продукту](docs/Product-opportunities.md).
+Дослідження розвитку: [конкуренти й можливості Markdown](docs/Competitor-analysis.md), [список функцій](docs/Editor-feature-backlog.md), [можливості для відмінності продукту](docs/Product-opportunities.md). Наступна мінорна версія додає теми, масштаб тексту й режими фокусу.

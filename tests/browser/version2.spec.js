@@ -18,6 +18,38 @@ async function clickMenu(page, selector) {
   await item.click();
 }
 
+test('view preferences change presentation only and persist across reloads', async ({ page }) => {
+  const source = '# Заголовок\n\nТекст документа.\n';
+  await load(page, source);
+  await clickMenu(page, '[data-view="theme"]');
+  await clickMenu(page, '[data-view="fontUp"]');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('#editor')).toHaveCSS('font-size', '18px');
+  expect(await out(page)).toBe(source);
+  expect(await page.evaluate(() => window.markdownEditor.dirty)).toBe(false);
+
+  await page.reload(); await page.waitForFunction(() => window.markdownEditor);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('#editor')).toHaveCSS('font-size', '18px');
+  await clickMenu(page, '[data-view="theme"]');
+  await clickMenu(page, '[data-view="fontReset"]');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('#editor')).toHaveCSS('font-size', '16px');
+});
+
+test('focus and typewriter modes follow the active paragraph without changing Markdown', async ({ page }) => {
+  const source = Array.from({ length: 45 }, (_, i) => `Абзац ${i + 1}`).join('\n\n') + '\n';
+  await load(page, source);
+  await clickMenu(page, '[data-view="focus"]');
+  await expect(page.locator('body')).toHaveClass(/focus-mode/);
+  await caret(page, '#editor p:nth-of-type(30)', 0);
+  await expect(page.locator('#editor p:nth-of-type(30)')).toHaveClass(/active-block/);
+  await clickMenu(page, '[data-view="typewriter"]');
+  await expect(page.locator('body')).toHaveClass(/typewriter-mode/);
+  expect(await out(page)).toBe(source);
+  expect(await page.evaluate(() => window.markdownEditor.dirty)).toBe(false);
+});
+
 test('typing groups undo and redo, restores caret, and respects saved baseline', async ({ page }) => {
   await load(page, 'Start\n'); await caret(page, '#editor p', 5); await page.keyboard.type(' abc');
   await page.keyboard.press('Control+z'); expect(await out(page)).toBe('Start\n');
