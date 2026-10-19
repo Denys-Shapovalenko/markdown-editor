@@ -20,7 +20,6 @@ header { height: 86px; display: flex; align-items: center; justify-content: spac
 #menu-bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: stretch; height: 36px; gap: 2px; padding: 0 22px; background: #fff; border-bottom: 1px solid var(--border); font-size: 13px; }
 #menu-bar [data-menu="file"] { order: 0; } #menu-bar [data-menu="edit"] { order: 1; } #menu-bar [data-menu="view"] { order: 2; }
 #menu-bar [data-menu="insert"] { order: 3; } #menu-bar [data-menu="format"] { order: 4; } #menu-bar [data-menu="table"] { order: 5; }
-#menu-bar [data-menu="help"] { order: 6; }
 #menu-bar details { position: relative; }
 #menu-bar summary { display: flex; align-items: center; height: 35px; list-style: none; padding: 0 11px; border-radius: 5px; cursor: default; user-select: none; }
 #menu-bar summary::-webkit-details-marker { display: none; }

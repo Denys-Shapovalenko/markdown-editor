@@ -20,7 +20,7 @@ for (const menu of appMenus) menu.addEventListener('toggle', () => {
 document.addEventListener('pointerdown', event => { if (!event.target.closest('#menu-bar')) appMenus.forEach(menu => { menu.open = false; }); });
 document.addEventListener('keydown', event => {
   if (event.altKey && !event.ctrlKey && !event.metaKey && !event.isComposing) {
-    const key = { f: 'file', e: 'edit', v: 'view', i: 'insert', o: 'format', t: 'table', h: 'help' }[event.key.toLowerCase()];
+    const key = { f: 'file', e: 'edit', v: 'view', i: 'insert', o: 'format', t: 'table' }[event.key.toLowerCase()];
     if (key) { event.preventDefault(); const menu = document.querySelector(`#menu-bar [data-menu="${key}"]`); appMenus.forEach(item => { item.open = item === menu; }); menu.querySelector('summary').focus(); return; }
   }
   const open = appMenus.find(menu => menu.open);
