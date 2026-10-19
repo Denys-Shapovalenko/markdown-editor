@@ -72,12 +72,13 @@ test('typewriter keeps the caret visible and centered inside a long paragraph', 
   await load(page, source);
   if (!await page.locator('body').evaluate(node => node.classList.contains('typewriter-mode')))
     await clickMenu(page, '[data-view="typewriter"]');
+  const editor = page.locator('#editor');
+  await editor.focus();
   await page.locator('#editor p').evaluate(node => {
     const text = node.firstChild;
-    const range = document.createRange();
-    range.setStart(text, Math.floor(text.length * .9)); range.collapse(true);
-    const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
-    document.querySelector('#editor').focus(); document.dispatchEvent(new Event('selectionchange'));
+    const selection = window.getSelection();
+    selection.collapse(text, Math.floor(text.length * .9));
+    document.dispatchEvent(new Event('selectionchange'));
   });
   await expect.poll(() => page.evaluate(() => {
     const range = window.getSelection().getRangeAt(0);
