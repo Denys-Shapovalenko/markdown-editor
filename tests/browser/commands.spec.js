@@ -36,6 +36,20 @@ test('main menu contains no Help item', async ({ page }) => {
   expect(visualOrder).toEqual(['Файл', 'Правка', 'Вигляд', 'Вставка', 'Формат', 'Таблиця']);
 });
 
+test('editor menus recover after the host finishes opening a document', async ({ page }) => {
+  await page.evaluate(async () => {
+    await window.markdownEditor.receive({ type: 'busy', value: true });
+    await window.markdownEditor.receive({ type: 'load', payload: { markdown: 'Opened document\n', name: 'Opened.md' } });
+    await window.markdownEditor.receive({ type: 'busy', value: false });
+  });
+  await expect(page.locator('#menu-bar [data-v2="copy"]')).toBeEnabled();
+  await expect(page.locator('#menu-bar [data-v2="paste"]')).toBeEnabled();
+  await expect(page.locator('#menu-bar [data-v2="undo"]')).toBeDisabled();
+  await page.locator('#editor p').click(); await page.keyboard.type('!');
+  await expect(page.locator('#menu-bar [data-v2="undo"]')).toBeEnabled();
+  await expect(page.locator('#menu-bar [data-v2="redo"]')).toBeDisabled();
+});
+
 for (const ordered of [false, true]) test(`remove only the chosen ${ordered ? 'numbered' : 'bulleted'} item`, async ({ page }) => {
   await load(page, ordered ? '5. First\n6. Chosen\n7. Last\n' : '- First\n- Chosen\n- Last\n');
   await select(page, '#editor li:nth-child(2)', 2);
