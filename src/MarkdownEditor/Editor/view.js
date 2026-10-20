@@ -2,12 +2,13 @@ const STORAGE_KEY = 'markdown-editor.view-preferences.v1';
 const FONT_SIZES = [14, 16, 18, 20, 22, 24];
 
 function readPreferences() {
-  const defaults = { theme: 'light', fontSize: 16, focus: false, typewriter: false };
+  const defaults = { theme: 'light', fontSize: 16, pageLayout: true, focus: false, typewriter: false };
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
     return {
       theme: value?.theme === 'dark' ? 'dark' : 'light',
       fontSize: FONT_SIZES.includes(value?.fontSize) ? value.fontSize : 16,
+      pageLayout: value?.pageLayout !== false,
       focus: value?.focus === true,
       typewriter: value?.typewriter === true
     };
@@ -18,6 +19,7 @@ export function installViewPreferences({ editor }) {
   const preferences = readPreferences();
   const root = document.documentElement;
   const buttons = Object.fromEntries([...document.querySelectorAll('[data-view]')].map(button => [button.dataset.view, button]));
+  const layoutButtons = [...document.querySelectorAll('[data-view-layout]')];
   let scrollFrame = 0;
 
   function save() {
@@ -38,7 +40,7 @@ export function installViewPreferences({ editor }) {
   function sync() {
     root.dataset.theme = preferences.theme;
     root.style.setProperty('--editor-font-size', `${preferences.fontSize}px`);
-    root.style.setProperty('--page-scale', String(preferences.fontSize / 16));
+    document.body.classList.toggle('full-width', !preferences.pageLayout);
     document.body.classList.toggle('focus-mode', preferences.focus);
     document.body.classList.toggle('typewriter-mode', preferences.typewriter);
     const themeLabel = preferences.theme === 'dark' ? 'Світла тема' : 'Темна тема';
@@ -46,6 +48,7 @@ export function installViewPreferences({ editor }) {
     buttons.theme.setAttribute('aria-label', themeLabel);
     for (const [key, pressed] of [['focus', preferences.focus], ['typewriter', preferences.typewriter]])
       buttons[key].setAttribute('aria-pressed', String(pressed));
+    for (const button of layoutButtons) button.setAttribute('aria-pressed', String((button.dataset.viewLayout === 'page') === preferences.pageLayout));
     updateActiveBlock();
   }
   function centerCaret() {
@@ -70,16 +73,27 @@ export function installViewPreferences({ editor }) {
     });
   }
   function change(update) { update(); sync(); save(); }
+  function changeFontSize(direction) {
+    const current = FONT_SIZES.indexOf(preferences.fontSize);
+    const next = Math.max(0, Math.min(FONT_SIZES.length - 1, current + direction));
+    if (next !== current) change(() => { preferences.fontSize = FONT_SIZES[next]; });
+  }
 
   buttons.theme.addEventListener('click', () => change(() => { preferences.theme = preferences.theme === 'dark' ? 'light' : 'dark'; }));
-  buttons.fontDown.addEventListener('click', () => change(() => { preferences.fontSize = FONT_SIZES[Math.max(0, FONT_SIZES.indexOf(preferences.fontSize) - 1)]; }));
-  buttons.fontUp.addEventListener('click', () => change(() => { preferences.fontSize = FONT_SIZES[Math.min(FONT_SIZES.length - 1, FONT_SIZES.indexOf(preferences.fontSize) + 1)]; }));
+  buttons.fontDown.addEventListener('click', () => changeFontSize(-1));
+  buttons.fontUp.addEventListener('click', () => changeFontSize(1));
   buttons.fontReset.addEventListener('click', () => change(() => { preferences.fontSize = 16; }));
+  layoutButtons.forEach(button => button.addEventListener('click', () => change(() => { preferences.pageLayout = button.dataset.viewLayout === 'page'; })));
   buttons.focus.addEventListener('click', () => change(() => { preferences.focus = !preferences.focus; }));
   buttons.typewriter.addEventListener('click', () => change(() => { preferences.typewriter = !preferences.typewriter; }));
+  document.addEventListener('wheel', event => {
+    if (!event.ctrlKey || event.deltaY === 0) return;
+    event.preventDefault();
+    changeFontSize(event.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
   document.addEventListener('selectionchange', () => { updateActiveBlock(); centerCaret(); });
   editor.addEventListener('input', () => { updateActiveBlock(); centerCaret(); });
   editor.addEventListener('focus', () => { updateActiveBlock(); centerCaret(); });
   sync();
-  return Object.freeze({ get preferences() { return { ...preferences }; }, reset() { Object.assign(preferences, { theme: 'light', fontSize: 16, focus: false, typewriter: false }); sync(); save(); } });
+  return Object.freeze({ get preferences() { return { ...preferences }; }, reset() { Object.assign(preferences, defaults); sync(); save(); } });
 }
