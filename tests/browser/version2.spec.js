@@ -28,19 +28,19 @@ test('view preferences change presentation only and persist across reloads', asy
   await expect(page.locator('#editor')).toHaveCSS('font-size', '18px');
   const enlargedPage = await page.evaluate(() => ({
     width: document.querySelector('main').getBoundingClientRect().width,
-    height: document.querySelector('#editor').getBoundingClientRect().height
+    height: document.querySelector('#editor').getBoundingClientRect().height,
+    toolbarHeight: document.querySelector('.toolbar').getBoundingClientRect().height
   }));
-  expect(enlargedPage.width).toBeGreaterThan(initialPageWidth);
-  expect(enlargedPage.height).toBeGreaterThan(550);
+  expect(enlargedPage.width).toBe(initialPageWidth);
+  expect(enlargedPage.height).toBe(550);
+  expect(enlargedPage.toolbarHeight).toBe(50);
   for (let i = 0; i < 3; i++) await clickMenu(page, '[data-view="fontUp"]');
-  const screenCappedPage = await page.evaluate(() => ({
+  const maxTextPage = await page.evaluate(() => ({
     width: document.querySelector('main').getBoundingClientRect().width,
     height: document.querySelector('#editor').getBoundingClientRect().height,
-    viewportWidth: window.innerWidth,
-    viewportHeight: window.innerHeight
+    toolbarHeight: document.querySelector('.toolbar').getBoundingClientRect().height
   }));
-  expect(screenCappedPage.width).toBeLessThanOrEqual(screenCappedPage.viewportWidth - 48 + 1);
-  expect(screenCappedPage.height).toBeLessThanOrEqual(screenCappedPage.viewportHeight - 230 + 1);
+  expect(maxTextPage).toEqual({ width: initialPageWidth, height: 550, toolbarHeight: 50 });
   for (let i = 0; i < 3; i++) await clickMenu(page, '[data-view="fontDown"]');
   expect(await out(page)).toBe(source);
   expect(await page.evaluate(() => window.markdownEditor.dirty)).toBe(false);
@@ -52,6 +52,41 @@ test('view preferences change presentation only and persist across reloads', asy
   await clickMenu(page, '[data-view="fontReset"]');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.locator('#editor')).toHaveCSS('font-size', '16px');
+});
+
+test('page layout switches between centered paper and full-width canvas and persists', async ({ page }) => {
+  await load(page, '# Wide document\n\nText.\n');
+  const pageWidth = await page.locator('main').evaluate(node => node.getBoundingClientRect().width);
+  await clickMenu(page, '[data-view-layout="full"]');
+  await expect(page.locator('body')).toHaveClass(/full-width/);
+  await expect(page.locator('[data-view-layout="full"]')).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.locator('main').evaluate(node => node.getBoundingClientRect().width)).toBeGreaterThan(pageWidth);
+  await page.reload(); await page.waitForFunction(() => window.markdownEditor);
+  await expect(page.locator('body')).toHaveClass(/full-width/);
+  await clickMenu(page, '[data-view-layout="page"]');
+  await expect(page.locator('body')).not.toHaveClass(/full-width/);
+  await expect(page.locator('[data-view-layout="page"]')).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Ctrl+mouse wheel changes editor text only and prevents browser zoom', async ({ page }) => {
+  await load(page, 'Text stays on the same page.\n');
+  const before = await page.evaluate(() => ({
+    pageWidth: document.querySelector('main').getBoundingClientRect().width,
+    toolbarHeight: document.querySelector('.toolbar').getBoundingClientRect().height,
+    toolbarFont: getComputedStyle(document.querySelector('.toolbar button')).fontSize,
+    pixelRatio: devicePixelRatio
+  }));
+  const editor = page.locator('#editor');
+  const box = await editor.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + 80);
+  await page.keyboard.down('Control'); await page.mouse.wheel(0, -100); await page.keyboard.up('Control');
+  await expect(editor).toHaveCSS('font-size', '18px');
+  expect(await page.evaluate(() => ({
+    pageWidth: document.querySelector('main').getBoundingClientRect().width,
+    toolbarHeight: document.querySelector('.toolbar').getBoundingClientRect().height,
+    toolbarFont: getComputedStyle(document.querySelector('.toolbar button')).fontSize,
+    pixelRatio: devicePixelRatio
+  }))).toEqual(before);
 });
 
 test('focus and typewriter modes follow the active paragraph without changing Markdown', async ({ page }) => {
@@ -219,7 +254,11 @@ test('editing one protected block source preserves others and undo restores raw 
   await page.keyboard.press('Control+z'); expect(await out(page)).toBe(source);
 });
 test('outline follows headings and keyboard can navigate to a selected heading', async ({ page }) => {
-  await load(page, '# A\n\nText\n\n## B\n'); await clickMenu(page, '[data-v2="outline"]');
+  await load(page, '# A\n\nText\n\n## B\n');
+  const centerBefore = await page.locator('main').evaluate(node => { const r = node.getBoundingClientRect(); return r.left + r.width / 2; });
+  await clickMenu(page, '[data-v2="outline"]');
+  const centerWithOutline = await page.locator('main').evaluate(node => { const r = node.getBoundingClientRect(); return r.left + r.width / 2; });
+  expect(centerWithOutline).toBe(centerBefore);
   await expect(page.locator('#outline button')).toHaveText(['A', 'B']); await page.locator('#outline button').last().focus(); await page.keyboard.press('Enter');
   expect(await page.evaluate(() => { const node = window.getSelection().anchorNode; return (node.nodeType === 3 ? node.parentElement : node).closest('h2')?.textContent; })).toBe('B');
 });
